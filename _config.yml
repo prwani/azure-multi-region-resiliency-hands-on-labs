@@ -1,0 +1,25 @@
+theme: jekyll-theme-cayman
+title: "Azure Multi-Region Resiliency Hands-on Labs"
+description: "Self-paced labs for implementing multi-region disaster recovery and active-active resiliency using non-paired Azure regions"
+baseurl: "/azure-multi-region-resiliency-hands-on-labs"
+url: "https://prwani.github.io"
+
+markdown: kramdown
+highlighter: rouge
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+plugins:
+  - jekyll-relative-links
+
+relative_links:
+  enabled: true
+  collections: true
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
