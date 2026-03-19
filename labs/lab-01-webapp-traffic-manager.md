@@ -7,49 +7,250 @@ title: "Lab 1: Multi-Region Web App with Traffic Manager & Chaos Studio"
 
 # Lab 1: Multi-Region Web App with Traffic Manager & Chaos Studio
 
+<script>
+document.documentElement.classList.add("lab-tabs-js");
+
+document.addEventListener("DOMContentLoaded", () => {
+  const storageKey = "azure-labs-preferred-tab";
+  const validTabs = ["bash", "powershell", "portal"];
+  const tabGroups = Array.from(document.querySelectorAll(".lab-tabs"));
+  const copyIcon = `
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M5.75 1A1.75 1.75 0 0 0 4 2.75v6.5C4 10.216 4.784 11 5.75 11h5.5A1.75 1.75 0 0 0 13 9.25v-6.5A1.75 1.75 0 0 0 11.25 1h-5.5Zm-.25 1.75c0-.138.112-.25.25-.25h5.5c.138 0 .25.112.25.25v6.5a.25.25 0 0 1-.25.25h-5.5a.25.25 0 0 1-.25-.25v-6.5Z"></path>
+      <path d="M2.75 5A1.75 1.75 0 0 0 1 6.75v6.5C1 14.216 1.784 15 2.75 15h5.5A1.75 1.75 0 0 0 10 13.25V12H8.5v1.25a.25.25 0 0 1-.25.25h-5.5a.25.25 0 0 1-.25-.25v-6.5c0-.138.112-.25.25-.25H4V5H2.75Z"></path>
+    </svg>
+  `;
+  const copiedIcon = `
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 1 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path>
+    </svg>
+  `;
+
+  function setActiveTab(tabName) {
+    const selectedTab = validTabs.includes(tabName) ? tabName : "bash";
+
+    tabGroups.forEach((group) => {
+      const buttons = group.querySelectorAll(".lab-tabs__button");
+      const panels = group.querySelectorAll(".lab-tabs__panel");
+
+      buttons.forEach((button) => {
+        const isActive = button.dataset.tab === selectedTab;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+        button.tabIndex = isActive ? 0 : -1;
+      });
+
+      panels.forEach((panel) => {
+        const isActive = panel.dataset.tabPanel === selectedTab;
+        panel.classList.toggle("is-active", isActive);
+        panel.hidden = !isActive;
+      });
+    });
+
+    try {
+      localStorage.setItem(storageKey, selectedTab);
+    } catch (error) {
+      console.warn("Could not persist tab preference", error);
+    }
+  }
+
+  tabGroups.forEach((group) => {
+    group.querySelectorAll(".lab-tabs__button").forEach((button) => {
+      button.type = "button";
+      button.setAttribute("role", "tab");
+      button.addEventListener("click", () => setActiveTab(button.dataset.tab));
+    });
+
+    group.querySelectorAll(".lab-tabs__panel").forEach((panel) => {
+      panel.setAttribute("role", "tabpanel");
+    });
+  });
+
+  let preferredTab = "bash";
+  try {
+    const storedTab = localStorage.getItem(storageKey);
+    if (validTabs.includes(storedTab)) {
+      preferredTab = storedTab;
+    }
+  } catch (error) {
+    console.warn("Could not read saved tab preference", error);
+  }
+  setActiveTab(preferredTab);
+
+  const copyTargets = Array.from(
+    document.querySelectorAll("div.highlighter-rouge, pre:not(.highlight)")
+  );
+
+  copyTargets.forEach((target) => {
+    if (target.dataset.copyReady === "true") {
+      return;
+    }
+
+    const codeElement = target.querySelector("code");
+    if (!codeElement || !codeElement.innerText.trim()) {
+      return;
+    }
+
+    target.dataset.copyReady = "true";
+    target.classList.add("lab-copyable");
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "lab-copy-button";
+    button.setAttribute("aria-label", "Copy code");
+    button.innerHTML = copyIcon;
+
+    button.addEventListener("click", async () => {
+      const text = codeElement.innerText.replace(/\s+$/, "");
+
+      try {
+        await navigator.clipboard.writeText(text);
+        button.classList.add("is-copied");
+        button.innerHTML = copiedIcon;
+        button.setAttribute("aria-label", "Copied");
+        window.setTimeout(() => {
+          button.classList.remove("is-copied");
+          button.innerHTML = copyIcon;
+          button.setAttribute("aria-label", "Copy code");
+        }, 1500);
+      } catch (error) {
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(codeElement);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+
+    target.appendChild(button);
+  });
+});
+</script>
+
 <style>
-.path-strip {
+.lab-tabs {
+  margin: 1rem 0 1.5rem;
+  border: 1px solid #d0d7de;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.lab-tabs__list {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.5rem;
-  margin: 0.75rem 0 1rem;
+  padding: 0.6rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+  overflow-x: auto;
 }
 
-.path-strip span {
-  display: inline-block;
-  padding: 0.3rem 0.8rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
+.lab-tabs__button {
+  padding: 0.55rem 0.95rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #57606a;
   font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.path-strip .bash {
-  background: #e8f5e9;
-  color: #1b5e20;
+.lab-tabs__button:hover {
+  background: rgba(9, 105, 218, 0.08);
+  color: #0969da;
 }
 
-.path-strip .powershell {
-  background: #e8f0fe;
-  color: #174ea6;
+.lab-tabs__button.is-active {
+  background: #ffffff;
+  color: #0969da;
+  box-shadow: inset 0 0 0 1px rgba(9, 105, 218, 0.16);
 }
 
-.path-strip .portal {
-  background: #fff4e5;
-  color: #9a6700;
+.lab-tabs__panel {
+  padding: 1rem 1rem 0.25rem;
+}
+
+.lab-tabs__panel > :first-child {
+  margin-top: 0;
+}
+
+html.lab-tabs-js .lab-tabs__panel {
+  display: none;
+}
+
+html.lab-tabs-js .lab-tabs__panel.is-active {
+  display: block;
+}
+
+.lab-note {
+  padding: 0.9rem 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid #0969da;
+  background: #eff6ff;
+  border-radius: 8px;
+}
+
+.lab-copyable {
+  position: relative;
+}
+
+.lab-copy-button {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(27, 31, 36, 0.15);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #57606a;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.lab-copy-button:hover {
+  background: #ffffff;
+  color: #0969da;
+}
+
+.lab-copy-button.is-copied {
+  color: #1a7f37;
+}
+
+.lab-copy-button svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.lab-copyable pre {
+  padding-top: 2.6rem;
+}
+
+@media (max-width: 767px) {
+  .lab-tabs__panel {
+    padding: 0.9rem 0.8rem 0.2rem;
+  }
 }
 </style>
 
 ## Why Multi-Region Web Apps Matter
 
-Azure App Service is a **regional** service. When you create a web app, it lives in a single Azure datacenter. That is fine for dev/test, but for production workloads it creates a **single point of failure**: if that region goes down, your application goes down with it.
+Azure App Service is a **regional** service. If your site only runs in one region, that region becomes a **single point of failure**. A multi-region deployment reduces that risk by running the application in two regions and using a global traffic layer to direct clients to the healthy endpoint.
 
-Multi-region deployment solves this by running your application in two Azure regions at the same time, fronted by a **global traffic router** that can detect failures and redirect clients automatically. In this lab, you will use **Azure Traffic Manager** with **priority routing** to implement active-passive failover between **Sweden Central** and **Norway East**.
+In this lab, you will use:
 
-By the end of this lab you will have:
-
-- A web app deployed to **two non-paired Azure regions**
-- A **Traffic Manager profile** that prefers the primary region and fails over to the secondary
-- A **Chaos Studio experiment** that stops the primary app so you can observe failover behavior
+- **App Service** in **Sweden Central** as the primary app
+- **App Service** in **Norway East** as the secondary app
+- **Azure Traffic Manager** with **Priority** routing for DNS-based failover
+- **Azure Chaos Studio** to stop the primary app and observe failover behavior
 
 ---
 
@@ -81,7 +282,7 @@ By the end of this lab you will have:
                     └───────────────────┘   └────────────────────┘
 ```
 
-**How it works:** clients resolve the Traffic Manager DNS name. Traffic Manager health-checks both endpoints and returns the DNS answer for the highest-priority **healthy** endpoint. If the primary app becomes unhealthy, Traffic Manager starts returning the secondary app instead.
+Traffic Manager is **DNS-based**, not an HTTP reverse proxy. It returns the DNS answer for the highest-priority healthy endpoint.
 
 ---
 
@@ -89,44 +290,34 @@ By the end of this lab you will have:
 
 | Requirement | Details |
 |---|---|
-| **Azure subscription** | Contributor or higher on the subscription or resource groups |
-| **Role assignment rights** | For the Chaos Studio section, you also need permission to create role assignments on the primary app scope or resource group (**Owner** or **User Access Administrator**) |
-| **Azure CLI** | v2.60 or later (`az version`) |
-| **Bash or PowerShell 7+** | Use Bash for Cloud Shell/WSL/macOS/Linux, or PowerShell 7+ on Windows |
-| **Azure portal access** | Needed if you prefer the Portal path |
-| **Two regions chosen** | This lab defaults to **Sweden Central** and **Norway East** |
-
-> **Tip:** If you are not sure which regions to use, run `az account list-locations --query "[?metadata.regionCategory=='Recommended'].{Name:name, DisplayName:displayName}" -o table`.
+| Azure subscription | Contributor or higher on the subscription or target resource groups |
+| Role assignment rights | For the Chaos Studio section, you also need permission to create role assignments on the primary app scope or resource group (**Owner** or **User Access Administrator**) |
+| Azure CLI | v2.60 or later |
+| Shell | Bash, PowerShell 7+, or Azure Cloud Shell |
+| Portal access | Needed for the portal-only path |
 
 ---
 
-## How to Use This Lab
+## How These Tabs Work
 
-Each actionable step below is split into the same three paths:
+This page uses a shared tab preference:
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
-
-- **Bash** works best in Azure Cloud Shell, WSL, Linux, or macOS
-- **PowerShell** works best in Windows Terminal or PowerShell 7+
-- **Portal** gives you the same setup through the Azure UI
-
-Use **one path per step**. Do not mix Bash syntax into PowerShell or vice versa.
+- If you click **Bash** in one step, the rest of the page switches to **Bash**
+- The selection is remembered for the page in your browser
+- Every code block gets a copy button in the top-right corner
 
 ---
 
-## Sign in and Select Your Subscription
+## Sign In and Select the Subscription
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 az login
@@ -134,7 +325,9 @@ az account list -o table
 az account set --subscription "<YOUR_SUBSCRIPTION_NAME_OR_ID>"
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 az login
@@ -142,25 +335,31 @@ az account list -o table
 az account set --subscription "<YOUR_SUBSCRIPTION_NAME_OR_ID>"
 ```
 
-### Portal
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
 1. Open the [Azure portal](https://portal.azure.com).
-2. If needed, switch to the correct tenant/directory from your account menu.
-3. Confirm the subscription you want to use from **Subscriptions**.
+2. If needed, switch to the correct tenant or directory from the account menu.
+3. Open **Subscriptions** and confirm the subscription you want to use.
+
+  </div>
+</div>
 
 ---
 
 ## Step 1 — Define Variables
 
-Use the same naming pattern throughout the lab so later steps are copy/paste friendly.
+Use a single naming pattern through the rest of the lab.
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 PRIMARY_REGION="swedencentral"
@@ -185,7 +384,9 @@ echo "TM profile:    $TM_PROFILE"
 echo "TM DNS label:  $TM_DNS_NAME"
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 $PRIMARY_REGION = "swedencentral"
@@ -210,65 +411,79 @@ Write-Host "TM profile:    $TM_PROFILE"
 Write-Host "TM DNS label:  $TM_DNS_NAME"
 ```
 
-### Portal
+  </div>
 
-Decide these values before you start clicking:
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+Write down or choose these values before you start:
 
 - Primary region: `swedencentral`
 - Secondary region: `norwayeast`
 - Resource groups: `rg-dr-swc`, `rg-dr-noe`
 - App Service plans: `plan-dr-swc`, `plan-dr-noe`
-- Web apps: `app-dr-swc-<suffix>`, `app-dr-noe-<suffix>`
-- Traffic Manager profile resource name: `tm-multiregion-webapp`
+- Web app names: `app-dr-swc-<suffix>`, `app-dr-noe-<suffix>`
+- Traffic Manager profile name: `tm-multiregion-webapp`
 - Traffic Manager DNS label: `tm-multiregion-webapp-<suffix>`
 
-> **Tip:** `TM_PROFILE` is the Traffic Manager **resource name**. `TM_DNS_NAME` is the public DNS label that becomes `tm-multiregion-webapp-<suffix>.trafficmanager.net`.
+  </div>
+</div>
+
+<div class="lab-note">
+<strong>Tip:</strong> <code>TM_PROFILE</code> is the Traffic Manager resource name. <code>TM_DNS_NAME</code> becomes <code>&lt;dns-label&gt;.trafficmanager.net</code>.
+</div>
 
 ---
 
 ## Step 2 — Create Resource Groups
 
-Create one resource group per region. This mirrors a real-world isolation pattern and makes cleanup easier.
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
-
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 az group create --name "$PRIMARY_RG" --location "$PRIMARY_REGION"
 az group create --name "$SECONDARY_RG" --location "$SECONDARY_REGION"
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 az group create --name $PRIMARY_RG --location $PRIMARY_REGION
 az group create --name $SECONDARY_RG --location $SECONDARY_REGION
 ```
 
-### Portal
+  </div>
 
-1. Go to **Resource groups**.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open **Resource groups**.
 2. Create `rg-dr-swc` in **Sweden Central**.
 3. Create `rg-dr-noe` in **Norway East**.
+
+  </div>
+</div>
 
 ---
 
 ## Step 3 — Create App Service Plans
 
-Each region needs its own App Service plan. This lab uses the **B1** SKU to keep costs low.
+Use the **B1** SKU to keep the lab inexpensive.
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 az appservice plan create \
@@ -286,7 +501,9 @@ az appservice plan create \
   --is-linux
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 az appservice plan create `
@@ -304,26 +521,31 @@ az appservice plan create `
   --is-linux
 ```
 
-### Portal
+  </div>
 
-1. Go to **App Service plans**.
-2. Create `plan-dr-swc` in **rg-dr-swc** and **Sweden Central**.
-3. Choose **Linux** and **B1 Basic**.
-4. Repeat for `plan-dr-noe` in **rg-dr-noe** and **Norway East**.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open **App Service plans**.
+2. Create `plan-dr-swc` in `rg-dr-swc` using **Linux** and **B1**.
+3. Create `plan-dr-noe` in `rg-dr-noe` using **Linux** and **B1**.
+
+  </div>
+</div>
 
 ---
 
 ## Step 4 — Create the Web Apps
 
-Create one Linux web app in each region and attach each one to its matching plan.
+Create one Linux web app in each region.
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 az webapp create \
@@ -339,7 +561,9 @@ az webapp create \
   --runtime "NODE:20-lts"
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 az webapp create `
@@ -355,9 +579,11 @@ az webapp create `
   --runtime "NODE:20-lts"
 ```
 
-### Portal
+  </div>
 
-1. Go to **App Services** and create a new app for the primary region.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open **App Services** and create a new app for the primary region.
 2. Use:
    - Resource group: `rg-dr-swc`
    - Name: `app-dr-swc-<suffix>`
@@ -366,11 +592,14 @@ az webapp create `
    - App Service plan: `plan-dr-swc`
 3. Repeat for the secondary region using `rg-dr-noe`, `app-dr-noe-<suffix>`, and `plan-dr-noe`.
 
+  </div>
+</div>
+
 ---
 
 ## Step 5 — Deploy a Tiny Region-Aware App
 
-The sample app is a minimal Node.js site that returns the app hostname, the configured region, and a timestamp.
+The sample app prints the hostname, region, and current timestamp so you can tell which instance answered the request.
 
 ### Shared app files
 
@@ -389,11 +618,11 @@ const server = http.createServer((req, res) => {
     <meta charset="UTF-8" />
     <title>Multi-Region Resiliency Lab</title>
     <style>
-      body { font-family: Segoe UI, sans-serif; margin: 40px; background: #f5f9ff; color: #102a43; }
-      .card { max-width: 720px; padding: 24px 28px; border-radius: 16px; background: #ffffff; box-shadow: 0 8px 24px rgba(16, 42, 67, 0.12); }
+      body { font-family: "Segoe UI", system-ui, sans-serif; margin: 40px; background: #f6f8fa; color: #24292f; }
+      .card { max-width: 720px; padding: 28px; border-radius: 16px; background: #ffffff; box-shadow: 0 12px 28px rgba(31, 35, 40, 0.08); }
       h1 { margin-top: 0; }
-      .label { color: #486581; font-size: 0.9rem; }
-      .value { font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; }
+      .label { color: #57606a; font-size: 0.9rem; margin-top: 1rem; }
+      .value { font-size: 1.2rem; font-weight: 700; }
     </style>
   </head>
   <body>
@@ -425,13 +654,14 @@ server.listen(process.env.PORT || 8080);
 }
 ```
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 mkdir -p /tmp/dr-webapp
@@ -496,7 +726,9 @@ az webapp deploy \
   --type zip
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 $TempRoot = Join-Path $env:TEMP "dr-webapp"
@@ -552,29 +784,35 @@ az webapp deploy --name $PRIMARY_APP --resource-group $PRIMARY_RG --src-path $Zi
 az webapp deploy --name $SECONDARY_APP --resource-group $SECONDARY_RG --src-path $ZipPath --type zip
 ```
 
-### Portal
+  </div>
 
-1. In each web app, go to **Settings > Configuration** and add an application setting named `REGION`.
-   - Primary app value: `swedencentral`
-   - Secondary app value: `norwayeast`
-2. In each web app, open **Development Tools > Advanced Tools** and select **Go**.
-3. In Kudu, open **Debug console > CMD** and browse to `site/wwwroot`.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. In each web app, open **Settings > Environment variables** and add `REGION`.
+   - Primary value: `swedencentral`
+   - Secondary value: `norwayeast`
+2. Open **Development Tools > Advanced Tools** and launch Kudu.
+3. In Kudu, browse to `site/wwwroot`.
 4. Upload `index.js` and `package.json` using the shared file contents above.
-5. Restart each app from **Overview > Restart**.
+5. Restart each app from **Overview**.
+
+  </div>
+</div>
 
 ---
 
 ## Step 6 — Verify Both App URLs Directly
 
-Before adding Traffic Manager, make sure both apps respond on their native `azurewebsites.net` URLs.
+Before adding Traffic Manager, verify each app on its own `azurewebsites.net` address.
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 echo "Primary:   https://${PRIMARY_APP}.azurewebsites.net"
@@ -584,7 +822,9 @@ curl -s "https://${PRIMARY_APP}.azurewebsites.net" | head -20
 curl -s "https://${SECONDARY_APP}.azurewebsites.net" | head -20
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 Write-Host "Primary:   https://$PRIMARY_APP.azurewebsites.net"
@@ -594,27 +834,35 @@ Write-Host "Secondary: https://$SECONDARY_APP.azurewebsites.net"
 (Invoke-WebRequest "https://$SECONDARY_APP.azurewebsites.net").Content
 ```
 
-### Portal
+  </div>
 
-1. Open each web app in the portal.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open each App Service in the portal.
 2. Select **Browse**.
 3. Confirm each app shows its own hostname and region.
 
-> **Tip:** If you see the default App Service page, wait 30-60 seconds and try again.
+  </div>
+</div>
+
+<div class="lab-note">
+<strong>Tip:</strong> If you still see the default App Service page, wait 30-60 seconds and refresh.
+</div>
 
 ---
 
 ## Step 7 — Create the Traffic Manager Profile
 
-Traffic Manager is a **DNS-based** traffic router. In this lab, it will health-check both apps and return the highest-priority healthy endpoint.
+Traffic Manager is a **DNS-based** traffic router. It monitors each endpoint and returns the highest-priority healthy answer.
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 az network traffic-manager profile create \
@@ -628,7 +876,9 @@ az network traffic-manager profile create \
   --ttl 30
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 az network traffic-manager profile create `
@@ -642,33 +892,39 @@ az network traffic-manager profile create `
   --ttl 30
 ```
 
-### Portal
+  </div>
 
-1. Go to **Traffic Manager profiles** and create a new profile.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open **Traffic Manager profiles** and create a new profile.
 2. Use:
    - Name: `tm-multiregion-webapp`
    - Resource group: `rg-dr-swc`
    - Routing method: **Priority**
    - Relative DNS name: `tm-multiregion-webapp-<suffix>`
-3. After creation, open **Configuration** and set:
+3. In **Configuration**, set:
    - Protocol: **HTTPS**
    - Port: `443`
    - Path: `/`
    - TTL: `30`
 
----
-
-## Step 8 — Add the Web Apps as Traffic Manager Endpoints
-
-The primary app gets priority **1**. The secondary app gets priority **2**.
-
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
+  </div>
 </div>
 
-### Bash
+---
+
+## Step 8 — Add Both Web Apps as Endpoints
+
+Primary gets priority **1** and secondary gets priority **2**.
+
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 PRIMARY_APP_ID=$(az webapp show \
@@ -700,7 +956,9 @@ az network traffic-manager endpoint create \
   --endpoint-status Enabled
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 $PRIMARY_APP_ID = az webapp show --name $PRIMARY_APP --resource-group $PRIMARY_RG --query "id" -o tsv
@@ -725,26 +983,34 @@ az network traffic-manager endpoint create `
   --endpoint-status Enabled
 ```
 
-### Portal
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
 1. Open the Traffic Manager profile.
 2. Go to **Endpoints > Add**.
-3. Add an **Azure endpoint** pointing to the primary web app with priority `1`.
-4. Add another **Azure endpoint** pointing to the secondary web app with priority `2`.
+3. Add the primary web app as an **Azure endpoint** with priority `1`.
+4. Add the secondary web app as an **Azure endpoint** with priority `2`.
+
+  </div>
+</div>
 
 ---
 
 ## Step 9 — Check Normal Routing
 
-> **Important:** Traffic Manager is **DNS only**. In this lab, the `*.trafficmanager.net` hostname is **not** bound as a custom domain on either App Service. That means opening the Traffic Manager hostname directly in a browser can show `404 Web Site not found` even when routing is working correctly. Use **DNS resolution** to verify failover, or bind a custom domain to both apps if you want one browser-friendly hostname.
-
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
+<div class="lab-note">
+<strong>Important:</strong> Traffic Manager is <strong>DNS only</strong>. In this lab, the <code>*.trafficmanager.net</code> hostname is <strong>not</strong> bound as a custom domain on either App Service. That means opening the Traffic Manager hostname directly in a browser can show <code>404 Web Site not found</code> even when routing is working correctly. Use <strong>DNS resolution</strong> to verify failover, or bind a custom domain on both apps if you want a browser-friendly shared hostname.
 </div>
 
-### Bash
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 TM_FQDN="${TM_DNS_NAME}.trafficmanager.net"
@@ -759,7 +1025,9 @@ az network traffic-manager endpoint list \
   -o table
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 $TM_FQDN = "$TM_DNS_NAME.trafficmanager.net"
@@ -774,30 +1042,36 @@ az network traffic-manager endpoint list `
   -o table
 ```
 
-### Portal
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
 1. Open the Traffic Manager profile.
-2. Confirm both endpoints are **Enabled** and healthy.
+2. Confirm both endpoints are enabled.
 3. Copy the Traffic Manager DNS name from **Overview**.
-4. Use `nslookup` from your local shell to confirm it resolves to the **primary** app's `azurewebsites.net` hostname.
+4. Use `nslookup` from a shell to confirm it resolves to the **primary** app's `azurewebsites.net` hostname.
 
-At this stage, DNS should point at the **primary** app.
+  </div>
+</div>
 
 ---
 
 ## Step 10 — Use Chaos Studio to Stop the Primary App
 
-This step intentionally stops the primary app so you can watch Traffic Manager fail over.
+This intentionally stops the primary app so you can observe Traffic Manager failover.
 
-> **Permission note:** creating the experiment is not enough. The experiment's system-assigned identity must also receive the **Website Contributor** role on the primary app. That role assignment requires **Owner** or **User Access Administrator** on the scope.
-
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
+<div class="lab-note">
+<strong>Permission note:</strong> creating the experiment is not enough. The experiment's system-assigned identity must also receive the <strong>Website Contributor</strong> role on the primary app. Creating that role assignment requires <strong>Owner</strong> or <strong>User Access Administrator</strong> on the scope.
 </div>
 
-### Bash
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 az provider register --namespace Microsoft.Chaos --wait
@@ -877,9 +1151,9 @@ az rest --method post \
   --url "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${PRIMARY_RG}/providers/Microsoft.Chaos/experiments/${EXPERIMENT_NAME}/start?api-version=2024-01-01"
 ```
 
-### PowerShell
+  </div>
 
-> **Important:** `$PRIMARY_APP_ID` must be the full App Service **resource ID** from Step 8, not just the app name.
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 az provider register --namespace Microsoft.Chaos --wait
@@ -960,30 +1234,39 @@ az rest --method post `
   --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$PRIMARY_RG/providers/Microsoft.Chaos/experiments/$EXPERIMENT_NAME/start?api-version=2024-01-01"
 ```
 
-### Portal
+  </div>
 
-1. Go to **Subscriptions > Resource providers** and register **Microsoft.Chaos** if it is not already registered.
-2. Open **Chaos Studio > Targets** and enable the primary App Service as a target.
-3. Enable the **Stop 1.0** capability for that target.
-4. Go to **Chaos Studio > Experiments > Create**.
-5. Create an experiment named `chaos-stop-primary-app` in the primary region with a **system-assigned identity**.
-6. Add the onboarded App Service target and the **App Service Stop 1.0** fault with a duration of **5 minutes**.
-7. Before starting the experiment, go to the primary web app's **Access control (IAM)** and grant the experiment identity the **Website Contributor** role.
-8. Start the experiment.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open **Subscriptions > Resource providers** and register **Microsoft.Chaos**.
+2. Open **Chaos Studio > Targets** and onboard the primary App Service as a target.
+3. Enable the **Stop 1.0** capability.
+4. Create a new experiment named `chaos-stop-primary-app` in the primary region with a system-assigned identity.
+5. Add the primary App Service target and the **App Service Stop 1.0** fault with a duration of **5 minutes**.
+6. Before starting the experiment, go to the primary web app's **Access control (IAM)** and grant the experiment identity the **Website Contributor** role.
+7. Start the experiment.
+
+  </div>
+</div>
+
+<div class="lab-note">
+<strong>Important:</strong> In PowerShell, <code>$PRIMARY_APP_ID</code> must be the full App Service <strong>resource ID</strong>, not just the app name.
+</div>
 
 ---
 
 ## Step 11 — Verify Failover to the Secondary App
 
-Traffic Manager failover is not instant. DNS can switch before the endpoint monitor view in the portal catches up.
+Failover is not instant. DNS can switch before the portal endpoint health view catches up.
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 TM_FQDN="${TM_DNS_NAME}.trafficmanager.net"
@@ -1002,7 +1285,9 @@ az network traffic-manager endpoint list \
   -o table
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 $TM_FQDN = "$TM_DNS_NAME.trafficmanager.net"
@@ -1021,25 +1306,34 @@ az network traffic-manager endpoint list `
   -o table
 ```
 
-### Portal
+  </div>
 
-1. Open the Chaos experiment and confirm it is running.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Confirm the Chaos experiment is running.
 2. Open the primary App Service and confirm it is stopped or unhealthy.
-3. Open the Traffic Manager profile and watch the endpoint view.
+3. Open the Traffic Manager profile and watch the endpoint health view.
 4. Use `nslookup` from a shell to confirm the Traffic Manager DNS name resolves to the **secondary** app.
 
-> **Note:** the Traffic Manager endpoint monitor can remain `Online` for a short time even after DNS has already switched. Treat DNS resolution as the source of truth for this lab.
+  </div>
+</div>
 
-> **Tip:** If you want a deterministic demo instead of waiting on health probes, temporarily disable the primary endpoint:
->
-> ```azurecli
-> az network traffic-manager endpoint update \
->   --resource-group "$PRIMARY_RG" \
->   --profile-name "$TM_PROFILE" \
->   --name "primary-swedencentral" \
->   --type azureEndpoints \
->   --endpoint-status Disabled
-> ```
+<div class="lab-note">
+<strong>Note:</strong> the Traffic Manager endpoint monitor can remain <code>Online</code> for a short time even after DNS has already switched. In this lab, treat <strong>DNS resolution</strong> as the source of truth.
+</div>
+
+<div class="lab-note" markdown="1">
+<strong>Tip:</strong> if you want a deterministic demo instead of waiting on health probes, temporarily disable the primary endpoint:
+
+```azurecli
+az network traffic-manager endpoint update \
+  --resource-group "$PRIMARY_RG" \
+  --profile-name "$TM_PROFILE" \
+  --name "primary-swedencentral" \
+  --type azureEndpoints \
+  --endpoint-status Disabled
+```
+</div>
 
 ---
 
@@ -1047,13 +1341,14 @@ az network traffic-manager endpoint list `
 
 After the Chaos experiment completes, the primary app should recover and Traffic Manager should return to the primary route.
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 az webapp start --name "$PRIMARY_APP" --resource-group "$PRIMARY_RG"
@@ -1068,7 +1363,9 @@ az network traffic-manager endpoint list \
   -o table
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 az webapp start --name $PRIMARY_APP --resource-group $PRIMARY_RG
@@ -1083,19 +1380,24 @@ az network traffic-manager endpoint list `
   -o table
 ```
 
-### Portal
+  </div>
 
-1. Wait for the experiment status to become **Success** or **Completed**.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Wait for the experiment to finish successfully.
 2. Confirm the primary web app is running again. Start it manually if necessary.
-3. Open the Traffic Manager profile and verify both endpoints return to a healthy state.
-4. Confirm DNS resolution points back to the **primary** app.
+3. Open the Traffic Manager profile and confirm both endpoints return to a healthy state.
+4. Use `nslookup` to confirm the Traffic Manager DNS name points back to the **primary** app.
+
+  </div>
+</div>
 
 ---
 
 ## Troubleshooting Notes
 
-- **Traffic Manager URL shows `404 Web Site not found`**  
-  That is expected in this lab unless you bind a custom domain on both App Services. Traffic Manager returns DNS answers; it does not rewrite the HTTP host header.
+- **Traffic Manager shows the App Service 404 page**  
+  That is expected unless you bind a custom domain on both web apps. Traffic Manager returns DNS answers; it does not rewrite the HTTP host header for App Service.
 
 - **PowerShell variables are not Bash variables**  
   Bash uses `PRIMARY_APP_ID=...`. PowerShell uses `$PRIMARY_APP_ID = ...`.
@@ -1104,19 +1406,14 @@ az network traffic-manager endpoint list `
   It must look like `/subscriptions/.../resourceGroups/.../providers/Microsoft.Web/sites/<app-name>`, not just `app-dr-swc-xxxxx`.
 
 - **`UnsupportedMediaType` from `az rest`**  
-  Add `--headers "Content-Type=application/json"` to the Chaos target and experiment creation calls.
+  Add `--headers "Content-Type=application/json"` to the Chaos target and experiment creation commands.
 
-- **Traffic Manager endpoint monitor still says `Online`**  
-  Portal and CLI monitor status can lag. If `nslookup` resolves the Traffic Manager DNS name to the secondary app, failover is already working from a client perspective.
-
-- **No manual health-check trigger exists**  
-  Traffic Manager probes on its own cadence. For an instant demo, disable the primary endpoint manually.
+- **There is no manual Traffic Manager health check button**  
+  Traffic Manager probes on its own cadence. If you want immediate failover for the demo, disable the primary endpoint manually.
 
 ---
 
 ## Validation Checklist
-
-Before moving on, confirm the following:
 
 - [ ] Two App Service plans and two web apps exist in Sweden Central and Norway East
 - [ ] Each direct `azurewebsites.net` URL shows hostname and region
@@ -1130,15 +1427,14 @@ Before moving on, confirm the following:
 
 ## Cleanup
 
-When you are done, delete the lab resources to avoid ongoing charges.
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-<div class="path-strip">
-  <span class="bash">Bash</span>
-  <span class="powershell">PowerShell</span>
-  <span class="portal">Portal</span>
-</div>
-
-### Bash
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 az group delete --name "$PRIMARY_RG" --yes --no-wait
@@ -1147,7 +1443,9 @@ az group delete --name "$SECONDARY_RG" --yes --no-wait
 rm -rf /tmp/dr-webapp /tmp/dr-webapp.zip /tmp/chaos-experiment.json
 ```
 
-### PowerShell
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
 ```powershell
 az group delete --name $PRIMARY_RG --yes --no-wait
@@ -1158,11 +1456,16 @@ Remove-Item (Join-Path $env:TEMP "dr-webapp.zip") -Force -ErrorAction SilentlyCo
 Remove-Item (Join-Path $env:TEMP "chaos-experiment.json") -Force -ErrorAction SilentlyContinue
 ```
 
-### Portal
+  </div>
 
-1. Go to **Resource groups**.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open **Resource groups**.
 2. Delete `rg-dr-swc`.
 3. Delete `rg-dr-noe`.
+
+  </div>
+</div>
 
 ---
 
@@ -1170,7 +1473,7 @@ Remove-Item (Join-Path $env:TEMP "chaos-experiment.json") -Force -ErrorAction Si
 
 ### Why Traffic Manager and not Azure Front Door?
 
-**Traffic Manager** operates at the DNS layer. It is simple, inexpensive, and a good fit for active-passive failover. **Azure Front Door** operates as an HTTP reverse proxy and adds features like WAF, caching, and SSL offload, but it is more complex and usually costs more.
+Traffic Manager works at the **DNS** layer. It is simple, inexpensive, and fits an active-passive failover lab well. Azure Front Door works as an HTTP reverse proxy and adds WAF, caching, and SSL termination, but it is more complex and typically costs more.
 
 | Feature | Traffic Manager | Azure Front Door |
 |---|---|---|
@@ -1183,14 +1486,10 @@ Remove-Item (Join-Path $env:TEMP "chaos-experiment.json") -Force -ErrorAction Si
 
 ### Why non-paired regions?
 
-This lab uses **Sweden Central** and **Norway East** to show that multi-region resiliency is not limited to Azure's default region pairs. The same design works with other region combinations that meet your latency, compliance, and capacity requirements.
-
-### Why B1 SKU?
-
-B1 is inexpensive and sufficient for a small lab. For production, you would normally use **S1** or higher for better performance, scaling features, and deployment flexibility.
+This lab uses **Sweden Central** and **Norway East** to show that multi-region resiliency is not limited to Azure's default region pairs. The same design works with other region combinations that fit your latency, compliance, and capacity requirements.
 
 ### Why Chaos Studio?
 
-Stopping the primary app through Chaos Studio lets you test the full failover path in a repeatable way. It is more realistic than manually guessing how an outage might look, and it gives you a foundation for future fault-injection scenarios.
+Chaos Studio lets you test the full failover path in a repeatable, explicit way instead of guessing how an outage might behave. It is a good foundation for more advanced fault-injection scenarios later.
 
 [Next: Lab 2 — Azure Blob Storage Object Replication →](lab-02-blob-storage-replication.md)
