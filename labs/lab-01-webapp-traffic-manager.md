@@ -315,7 +315,7 @@ This page uses a shared tab preference:
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -325,7 +325,7 @@ az account list -o table
 az account set --subscription "<YOUR_SUBSCRIPTION_NAME_OR_ID>"
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -335,7 +335,7 @@ az account list -o table
 az account set --subscription "<YOUR_SUBSCRIPTION_NAME_OR_ID>"
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -343,7 +343,7 @@ az account set --subscription "<YOUR_SUBSCRIPTION_NAME_OR_ID>"
 2. If needed, switch to the correct tenant or directory from the account menu.
 3. Open **Subscriptions** and confirm the subscription you want to use.
 
-  </div>
+</div>
 </div>
 
 ---
@@ -357,7 +357,7 @@ Use a single naming pattern through the rest of the lab.
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -384,7 +384,7 @@ echo "TM profile:    $TM_PROFILE"
 echo "TM DNS label:  $TM_DNS_NAME"
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -411,7 +411,7 @@ Write-Host "TM profile:    $TM_PROFILE"
 Write-Host "TM DNS label:  $TM_DNS_NAME"
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -425,7 +425,7 @@ Write down or choose these values before you start:
 - Traffic Manager profile name: `tm-multiregion-webapp`
 - Traffic Manager DNS label: `tm-multiregion-webapp-<suffix>`
 
-  </div>
+</div>
 </div>
 
 <div class="lab-note">
@@ -441,7 +441,7 @@ Write down or choose these values before you start:
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -450,7 +450,7 @@ az group create --name "$PRIMARY_RG" --location "$PRIMARY_REGION"
 az group create --name "$SECONDARY_RG" --location "$SECONDARY_REGION"
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -459,7 +459,7 @@ az group create --name $PRIMARY_RG --location $PRIMARY_REGION
 az group create --name $SECONDARY_RG --location $SECONDARY_REGION
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -467,7 +467,7 @@ az group create --name $SECONDARY_RG --location $SECONDARY_REGION
 2. Create `rg-dr-swc` in **Sweden Central**.
 3. Create `rg-dr-noe` in **Norway East**.
 
-  </div>
+</div>
 </div>
 
 ---
@@ -481,7 +481,7 @@ Use the **B1** SKU to keep the lab inexpensive.
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -501,7 +501,7 @@ az appservice plan create \
   --is-linux
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -521,7 +521,7 @@ az appservice plan create `
   --is-linux
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -529,7 +529,7 @@ az appservice plan create `
 2. Create `plan-dr-swc` in `rg-dr-swc` using **Linux** and **B1**.
 3. Create `plan-dr-noe` in `rg-dr-noe` using **Linux** and **B1**.
 
-  </div>
+</div>
 </div>
 
 ---
@@ -543,7 +543,7 @@ Create one Linux web app in each region.
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -561,7 +561,7 @@ az webapp create \
   --runtime "NODE:20-lts"
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -579,7 +579,7 @@ az webapp create `
   --runtime "NODE:20-lts"
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -592,7 +592,7 @@ az webapp create `
    - App Service plan: `plan-dr-swc`
 3. Repeat for the secondary region using `rg-dr-noe`, `app-dr-noe-<suffix>`, and `plan-dr-noe`.
 
-  </div>
+</div>
 </div>
 
 ---
@@ -634,7 +634,7 @@ const server = http.createServer((req, res) => {
       <div class="value">${region}</div>
       <div class="label">Timestamp</div>
       <div class="value">${new Date().toISOString()}</div>
-    </div>
+</div>
   </body>
 </html>`);
 });
@@ -659,7 +659,7 @@ server.listen(process.env.PORT || 8080);
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -726,7 +726,7 @@ az webapp deploy \
   --type zip
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -784,7 +784,7 @@ az webapp deploy --name $PRIMARY_APP --resource-group $PRIMARY_RG --src-path $Zi
 az webapp deploy --name $SECONDARY_APP --resource-group $SECONDARY_RG --src-path $ZipPath --type zip
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -796,7 +796,7 @@ az webapp deploy --name $SECONDARY_APP --resource-group $SECONDARY_RG --src-path
 4. Upload `index.js` and `package.json` using the shared file contents above.
 5. Restart each app from **Overview**.
 
-  </div>
+</div>
 </div>
 
 ---
@@ -810,7 +810,7 @@ Before adding Traffic Manager, verify each app on its own `azurewebsites.net` ad
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -822,7 +822,7 @@ curl -s "https://${PRIMARY_APP}.azurewebsites.net" | head -20
 curl -s "https://${SECONDARY_APP}.azurewebsites.net" | head -20
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -834,7 +834,7 @@ Write-Host "Secondary: https://$SECONDARY_APP.azurewebsites.net"
 (Invoke-WebRequest "https://$SECONDARY_APP.azurewebsites.net").Content
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -842,7 +842,7 @@ Write-Host "Secondary: https://$SECONDARY_APP.azurewebsites.net"
 2. Select **Browse**.
 3. Confirm each app shows its own hostname and region.
 
-  </div>
+</div>
 </div>
 
 <div class="lab-note">
@@ -860,7 +860,7 @@ Traffic Manager is a **DNS-based** traffic router. It monitors each endpoint and
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -876,7 +876,7 @@ az network traffic-manager profile create \
   --ttl 30
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -892,7 +892,7 @@ az network traffic-manager profile create `
   --ttl 30
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -908,7 +908,7 @@ az network traffic-manager profile create `
    - Path: `/`
    - TTL: `30`
 
-  </div>
+</div>
 </div>
 
 ---
@@ -922,7 +922,7 @@ Primary gets priority **1** and secondary gets priority **2**.
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -956,7 +956,7 @@ az network traffic-manager endpoint create \
   --endpoint-status Enabled
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -983,7 +983,7 @@ az network traffic-manager endpoint create `
   --endpoint-status Enabled
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -992,7 +992,7 @@ az network traffic-manager endpoint create `
 3. Add the primary web app as an **Azure endpoint** with priority `1`.
 4. Add the secondary web app as an **Azure endpoint** with priority `2`.
 
-  </div>
+</div>
 </div>
 
 ---
@@ -1008,7 +1008,7 @@ az network traffic-manager endpoint create `
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -1025,7 +1025,7 @@ az network traffic-manager endpoint list \
   -o table
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -1042,7 +1042,7 @@ az network traffic-manager endpoint list `
   -o table
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -1051,7 +1051,7 @@ az network traffic-manager endpoint list `
 3. Copy the Traffic Manager DNS name from **Overview**.
 4. Use `nslookup` from a shell to confirm it resolves to the **primary** app's `azurewebsites.net` hostname.
 
-  </div>
+</div>
 </div>
 
 ---
@@ -1069,7 +1069,7 @@ This intentionally stops the primary app so you can observe Traffic Manager fail
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -1151,7 +1151,7 @@ az rest --method post \
   --url "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${PRIMARY_RG}/providers/Microsoft.Chaos/experiments/${EXPERIMENT_NAME}/start?api-version=2024-01-01"
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -1234,7 +1234,7 @@ az rest --method post `
   --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$PRIMARY_RG/providers/Microsoft.Chaos/experiments/$EXPERIMENT_NAME/start?api-version=2024-01-01"
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -1246,7 +1246,7 @@ az rest --method post `
 6. Before starting the experiment, go to the primary web app's **Access control (IAM)** and grant the experiment identity the **Website Contributor** role.
 7. Start the experiment.
 
-  </div>
+</div>
 </div>
 
 <div class="lab-note">
@@ -1264,7 +1264,7 @@ Failover is not instant. DNS can switch before the portal endpoint health view c
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -1285,7 +1285,7 @@ az network traffic-manager endpoint list \
   -o table
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -1306,7 +1306,7 @@ az network traffic-manager endpoint list `
   -o table
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -1315,7 +1315,7 @@ az network traffic-manager endpoint list `
 3. Open the Traffic Manager profile and watch the endpoint health view.
 4. Use `nslookup` from a shell to confirm the Traffic Manager DNS name resolves to the **secondary** app.
 
-  </div>
+</div>
 </div>
 
 <div class="lab-note">
@@ -1346,7 +1346,7 @@ After the Chaos experiment completes, the primary app should recover and Traffic
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -1363,7 +1363,7 @@ az network traffic-manager endpoint list \
   -o table
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -1380,7 +1380,7 @@ az network traffic-manager endpoint list `
   -o table
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -1389,7 +1389,7 @@ az network traffic-manager endpoint list `
 3. Open the Traffic Manager profile and confirm both endpoints return to a healthy state.
 4. Use `nslookup` to confirm the Traffic Manager DNS name points back to the **primary** app.
 
-  </div>
+</div>
 </div>
 
 ---
@@ -1432,7 +1432,7 @@ az network traffic-manager endpoint list `
     <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
     <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
     <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
-  </div>
+</div>
 
   <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
@@ -1443,7 +1443,7 @@ az group delete --name "$SECONDARY_RG" --yes --no-wait
 rm -rf /tmp/dr-webapp /tmp/dr-webapp.zip /tmp/chaos-experiment.json
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
@@ -1456,7 +1456,7 @@ Remove-Item (Join-Path $env:TEMP "dr-webapp.zip") -Force -ErrorAction SilentlyCo
 Remove-Item (Join-Path $env:TEMP "chaos-experiment.json") -Force -ErrorAction SilentlyContinue
 ```
 
-  </div>
+</div>
 
   <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
@@ -1464,7 +1464,7 @@ Remove-Item (Join-Path $env:TEMP "chaos-experiment.json") -Force -ErrorAction Si
 2. Delete `rg-dr-swc`.
 3. Delete `rg-dr-noe`.
 
-  </div>
+</div>
 </div>
 
 ---
