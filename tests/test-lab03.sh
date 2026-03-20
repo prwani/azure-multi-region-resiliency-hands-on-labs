@@ -15,9 +15,24 @@ SECONDARY_SERVER="sql-dr-noe-${RANDOM_SUFFIX}"
 DB_NAME="sqldb-sample"
 FG_NAME="fg-multiregion-${RANDOM_SUFFIX}"
 
-# Get signed-in user info for AAD-only auth (required by policy)
-AAD_ADMIN_USER=$(az ad signed-in-user show --query userPrincipalName -o tsv)
-AAD_ADMIN_SID=$(az ad signed-in-user show --query id -o tsv)
+# Get signed-in user info for AAD-only auth (required by policy).
+# Some tenants block `az ad signed-in-user show`, but Microsoft Graph `/me`
+# still works for the signed-in Azure CLI account.
+AAD_ADMIN_USER=$(az rest \
+  --resource https://graph.microsoft.com \
+  --url https://graph.microsoft.com/v1.0/me \
+  --query userPrincipalName \
+  -o tsv 2>/dev/null || true)
+AAD_ADMIN_SID=$(az rest \
+  --resource https://graph.microsoft.com \
+  --url https://graph.microsoft.com/v1.0/me \
+  --query id \
+  -o tsv 2>/dev/null || true)
+
+if [ -z "$AAD_ADMIN_USER" ] || [ -z "$AAD_ADMIN_SID" ]; then
+  AAD_ADMIN_USER=$(az ad signed-in-user show --query userPrincipalName -o tsv)
+  AAD_ADMIN_SID=$(az ad signed-in-user show --query id -o tsv)
+fi
 
 echo "RANDOM_SUFFIX=$RANDOM_SUFFIX"
 echo "PRIMARY_SERVER=$PRIMARY_SERVER"

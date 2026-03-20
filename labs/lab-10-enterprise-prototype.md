@@ -7,6 +7,240 @@ title: "Lab 10: Integrated Enterprise App – Multi-Region Prototype"
 
 # Lab 10: Integrated Enterprise App – Multi-Region Prototype
 
+<script>
+document.documentElement.classList.add("lab-tabs-js");
+
+document.addEventListener("DOMContentLoaded", () => {
+  const storageKey = "azure-labs-preferred-tab";
+  const validTabs = ["bash", "powershell", "portal"];
+  const tabGroups = Array.from(document.querySelectorAll(".lab-tabs"));
+  const copyIcon = `
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M5.75 1A1.75 1.75 0 0 0 4 2.75v6.5C4 10.216 4.784 11 5.75 11h5.5A1.75 1.75 0 0 0 13 9.25v-6.5A1.75 1.75 0 0 0 11.25 1h-5.5Zm-.25 1.75c0-.138.112-.25.25-.25h5.5c.138 0 .25.112.25.25v6.5a.25.25 0 0 1-.25.25h-5.5a.25.25 0 0 1-.25-.25v-6.5Z"></path>
+      <path d="M2.75 5A1.75 1.75 0 0 0 1 6.75v6.5C1 14.216 1.784 15 2.75 15h5.5A1.75 1.75 0 0 0 10 13.25V12H8.5v1.25a.25.25 0 0 1-.25.25h-5.5a.25.25 0 0 1-.25-.25v-6.5c0-.138.112-.25.25-.25H4V5H2.75Z"></path>
+    </svg>
+  `;
+  const copiedIcon = `
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 1 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path>
+    </svg>
+  `;
+
+  function setActiveTab(tabName) {
+    const selectedTab = validTabs.includes(tabName) ? tabName : "bash";
+
+    tabGroups.forEach((group) => {
+      const buttons = group.querySelectorAll(".lab-tabs__button");
+      const panels = group.querySelectorAll(".lab-tabs__panel");
+
+      buttons.forEach((button) => {
+        const isActive = button.dataset.tab === selectedTab;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+        button.tabIndex = isActive ? 0 : -1;
+      });
+
+      panels.forEach((panel) => {
+        const isActive = panel.dataset.tabPanel === selectedTab;
+        panel.classList.toggle("is-active", isActive);
+        panel.hidden = !isActive;
+      });
+    });
+
+    try {
+      localStorage.setItem(storageKey, selectedTab);
+    } catch (error) {
+      console.warn("Could not persist tab preference", error);
+    }
+  }
+
+  tabGroups.forEach((group) => {
+    group.querySelectorAll(".lab-tabs__button").forEach((button) => {
+      button.type = "button";
+      button.setAttribute("role", "tab");
+      button.addEventListener("click", () => setActiveTab(button.dataset.tab));
+    });
+
+    group.querySelectorAll(".lab-tabs__panel").forEach((panel) => {
+      panel.setAttribute("role", "tabpanel");
+    });
+  });
+
+  let preferredTab = "bash";
+  try {
+    const storedTab = localStorage.getItem(storageKey);
+    if (validTabs.includes(storedTab)) {
+      preferredTab = storedTab;
+    }
+  } catch (error) {
+    console.warn("Could not read saved tab preference", error);
+  }
+  setActiveTab(preferredTab);
+
+  const copyTargets = Array.from(
+    document.querySelectorAll("div.highlighter-rouge, pre:not(.highlight)")
+  );
+
+  copyTargets.forEach((target) => {
+    if (target.dataset.copyReady === "true") {
+      return;
+    }
+
+    const codeElement = target.querySelector("code");
+    if (!codeElement || !codeElement.innerText.trim()) {
+      return;
+    }
+
+    target.dataset.copyReady = "true";
+    target.classList.add("lab-copyable");
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "lab-copy-button";
+    button.setAttribute("aria-label", "Copy code");
+    button.innerHTML = copyIcon;
+
+    button.addEventListener("click", async () => {
+      const text = codeElement.innerText.replace(/\s+$/, "");
+
+      try {
+        await navigator.clipboard.writeText(text);
+        button.classList.add("is-copied");
+        button.innerHTML = copiedIcon;
+        button.setAttribute("aria-label", "Copied");
+        window.setTimeout(() => {
+          button.classList.remove("is-copied");
+          button.innerHTML = copyIcon;
+          button.setAttribute("aria-label", "Copy code");
+        }, 1500);
+      } catch (error) {
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(codeElement);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+
+    target.appendChild(button);
+  });
+});
+</script>
+
+<style>
+.lab-tabs {
+  margin: 1rem 0 1.5rem;
+  border: 1px solid #d0d7de;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.lab-tabs__list {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+  overflow-x: auto;
+}
+
+.lab-tabs__button {
+  padding: 0.55rem 0.95rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #57606a;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.lab-tabs__button:hover {
+  background: rgba(9, 105, 218, 0.08);
+  color: #0969da;
+}
+
+.lab-tabs__button.is-active {
+  background: #ffffff;
+  color: #0969da;
+  box-shadow: inset 0 0 0 1px rgba(9, 105, 218, 0.16);
+}
+
+.lab-tabs__panel {
+  padding: 1rem 1rem 0.25rem;
+}
+
+.lab-tabs__panel > :first-child {
+  margin-top: 0;
+}
+
+html.lab-tabs-js .lab-tabs__panel {
+  display: none;
+}
+
+html.lab-tabs-js .lab-tabs__panel.is-active {
+  display: block;
+}
+
+.lab-note {
+  padding: 0.9rem 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid #0969da;
+  background: #eff6ff;
+  border-radius: 8px;
+}
+
+.lab-copyable {
+  position: relative;
+}
+
+.lab-copy-button {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(27, 31, 36, 0.15);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #57606a;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.lab-copy-button:hover {
+  background: #ffffff;
+  color: #0969da;
+}
+
+.lab-copy-button.is-copied {
+  color: #1a7f37;
+}
+
+.lab-copy-button svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.lab-copyable pre {
+  padding-top: 2.6rem;
+}
+
+@media (max-width: 767px) {
+  .lab-tabs__panel {
+    padding: 0.9rem 0.8rem 0.2rem;
+  }
+}
+</style>
+
 > **Capstone Lab — Deploy a fully integrated multi-region enterprise application using the topology-driven prototype, configure every service layer for cross-region resilience, and validate coordinated failover end-to-end.**
 
 ---
@@ -82,11 +316,11 @@ The prototype decomposes multi-region enablement into three sequential steps:
 │  Primary Baseline     │────►│  Discover & Recommend  │────►│  Enable Secondary     │
 │                       │     │                        │     │                       │
 │  • Provision all      │     │  • Scan ARM for        │     │  • Deploy secondary   │
-│    primary-region     │     │    service availability │     │    region resources   │
-│    resources          │     │  • Score candidate      │     │  • Enable replication │
-│  • Deploy app code    │     │    regions (weighted)   │     │  • Configure aliases  │
-│  • Validate health    │     │  • Output per-service   │     │  • Wire up Front Door │
-│                       │     │    recommendations      │     │  • Run smoke tests    │
+│    primary-region     │     │    service availability│     │    region resources   │
+│    resources          │     │  • Score candidate     │     │  • Enable replication │
+│  • Deploy app code    │     │    regions (weighted)  │     │  • Configure aliases  │
+│  • Validate health    │     │  • Output per-service  │     │  • Wire up Front Door │
+│                       │     │    recommendations     │     │  • Run smoke tests    │
 └──────────────────────┘     └───────────────────────┘     └──────────────────────┘
 ```
 
@@ -134,6 +368,8 @@ This lab assumes you are comfortable with the concepts introduced in Labs 1–9.
 | [Databricks CLI](https://docs.databricks.com/dev-tools/cli/index.html) | Latest | ⬜ Optional | For Databricks workspace domains |
 | [Microsoft Fabric workspace](https://learn.microsoft.com/fabric/) | — | ⬜ Optional | For Fabric integration features |
 
+> **PowerShell note:** The prototype repository uses Bash entrypoints for baseline deployment, secondary enablement, cost controls, and cleanup. The PowerShell tabs stay PowerShell-native and invoke those scripts through `bash`, so keep Azure Cloud Shell, WSL, or Git Bash available.
+
 ### Azure Requirements
 
 - **Azure subscription** with **Contributor** or **Owner** role
@@ -141,20 +377,70 @@ This lab assumes you are comfortable with the concepts introduced in Labs 1–9.
 - For multi-subscription deployments: a second subscription for Fabric resources (see topology manifest)
 - Sufficient quota for: App Service plans, SQL databases, Cosmos DB accounts, Storage accounts, Service Bus Premium namespaces, Key Vaults, and Azure Front Door
 
+---
+
+## How These Tabs Work
+
+This page uses a shared tab preference:
+
+- If you click **Bash** in one step, the rest of the page switches to **Bash**
+- The selection is remembered for the page in your browser
+- Every code block gets a copy button in the top-right corner
+
+<div class="lab-note">
+<strong>Prototype note:</strong> Several orchestration entry points in the external prototype repository are currently published as Bash scripts. In those places, the PowerShell tabs call the same entry points through <code>bash</code> so you can stay in the same shell while following the lab.
+</div>
+
+---
+
 ### Verify Your Environment
 
-```bash
-# Verify all required tools are installed
-az version          # Azure CLI 2.60+
-azd version         # Azure Developer CLI
-pwsh --version      # PowerShell 7+
-jq --version        # jq 1.6+
-git --version       # Git 2.x
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
 
-# Authenticate
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
+az version
+azd version
+pwsh --version
+jq --version
+git --version
+
 az login
-az account show     # Confirm correct subscription
+az account show
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az version
+azd version
+$PSVersionTable.PSVersion.ToString()
+jq --version
+git --version
+
+az login
+az account show
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open **Azure Cloud Shell** from the portal toolbar if you want an Azure-hosted terminal.
+2. Confirm you are signed in to the correct tenant and subscription under **Subscriptions**.
+3. If you plan to run the prototype from your workstation, verify `az`, `azd`, PowerShell, Git, and `jq` locally before you start.
+4. Review quotas in **Usage + quotas** for the resource types this lab provisions.
+
+      </div>
+    </div>
 
 ---
 
@@ -162,16 +448,43 @@ az account show     # Confirm correct subscription
 
 ### 1. Clone the Prototype Repository
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
 git clone https://github.com/prwani/multi-region-nonpaired-enterprise-prototype.git
 cd multi-region-nonpaired-enterprise-prototype
-```
-
-Take a moment to explore the repository structure:
-
-```bash
 ls -la
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+git clone https://github.com/prwani/multi-region-nonpaired-enterprise-prototype.git
+Set-Location .\multi-region-nonpaired-enterprise-prototype
+Get-ChildItem -Force
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the prototype repository in GitHub so you can skim the README and docs alongside the lab.
+2. Use Azure Cloud Shell or your local workstation to clone the repository; the portal itself does not clone Git repositories for you.
+3. Keep the repository open in an editor because you will modify `config/topology.json` and inspect generated outputs as you progress.
+
+      </div>
+    </div>
+
+Take a moment to explore the repository structure:
 
 ```
 ├── config/
@@ -198,47 +511,122 @@ ls -la
 
 The topology manifest (`config/topology.json`) is the **single source of truth** for the entire deployment. It defines subscriptions, regions, domain configurations, and feature flags.
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
 cp config/topology.example.json config/topology.json
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+Copy-Item ./config/topology.example.json ./config/topology.json
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open `config/topology.example.json` in the Cloud Shell editor, VS Code, or your preferred editor.
+2. Save a working copy as `config/topology.json`.
+3. Update subscription IDs, primary and secondary regions, domains, and feature flags before you deploy anything.
+
+      </div>
+    </div>
 
 Open `config/topology.json` in your editor and fill in your values:
 
 ```jsonc
 {
+  "$schema": "./topology.schema.json",
+  "version": "1.0.0",
   "subscriptions": {
-    "primary": "<your-primary-subscription-id>",
-    "fabric": "<your-fabric-subscription-id-or-same-as-primary>"
+    "main": {
+      "id": "<your-primary-subscription-id>",
+      "name": "main-subscription"
+    },
+    "fabric": {
+      "id": "<your-fabric-subscription-id-or-same-as-primary>",
+      "name": "fabric-subscription"
+    }
   },
-  "regions": {
-    "primary": "swedencentral",
-    "secondary": "norwayeast"
+  "primaryRegion": "swedencentral",
+  "secondaryRegion": "norwayeast",
+  "regionProfile": "./region-profiles/swedencentral-norwayeast.json",
+  "featureFlags": {
+    "enableCrossSubscription": false,
+    "enablePrivateEndpoints": false,
+    "enableCMK": false,
+    "enableFabric": false,
+    "enableActiveActive": false
   },
   "domains": {
-    "app": "myapp.example.com",
-    "api": "api.myapp.example.com"
+    "app-workloads": {
+      "subscription": "main",
+      "description": "Application workload samples.",
+      "samples": ["A-aks-store"],
+      "resourceGroups": ["rg-contoso-app-workloads-swedencentral"]
+    }
   },
-  "featureFlags": {
-    "enableFabric": false,
-    "enableDatabricks": false,
-    "enableEventHubs": true,
-    "enableServiceBus": true,
-    "multiRegionWrites": true
-  }
+  "sampleManifest": "./samples-manifest.json"
 }
 ```
 
-> **💡 Multi-subscription support:** If your organization requires Fabric resources in a separate subscription, set `subscriptions.fabric` to the Fabric subscription ID. Otherwise, use the same ID as `primary`.
+> **💡 Multi-subscription support:** If your organization requires Fabric resources in a separate subscription, set `subscriptions.fabric.id` to the Fabric subscription ID. Otherwise, use the same ID as `subscriptions.main.id`.
 
-> **💡 Feature flags:** Disable optional services (Fabric, Databricks) if you don't have the prerequisites. The deployment scripts respect these flags and skip disabled components.
+> **💡 Domain mapping:** Each `domains.<name>.subscription` value must reference a key under `subscriptions`, and each sample ID must exist in `config/samples-manifest.json`. Start with a single sample such as `A-aks-store` while you validate the workflow.
+
+> **💡 Feature flags:** Use the flags that exist in the prototype schema (`enableCrossSubscription`, `enablePrivateEndpoints`, `enableCMK`, `enableFabric`, `enableActiveActive`). Disable optional capabilities if you do not have the required prerequisites.
 
 ### 3. Bootstrap Upstream Samples
 
-The prototype pulls in code from several upstream repositories. The fetch script clones them into the correct local paths:
+The prototype pulls in code from several upstream repositories. The fetch script clones them into the correct local paths.
+
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
-./scripts/fetch-samples.sh
+bash ./scripts/fetch-samples.sh
+ls samples/
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+$RepoRoot = git rev-parse --show-toplevel
+Set-Location $RepoRoot
+
+bash ./scripts/fetch-samples.sh
+Get-ChildItem .\samples
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Run the bootstrap script from Cloud Shell or your workstation.
+2. Use the portal primarily for verification here: once the script finishes, inspect the cloned `samples/` folder in your editor.
+3. If the script fails, correct the local prerequisites before you move on to infrastructure deployment.
+
+      </div>
+    </div>
 
 This fetches samples from:
 
@@ -249,24 +637,51 @@ This fetches samples from:
 | [Azure-Samples/aks-store-demo](https://github.com/Azure-Samples/aks-store-demo) | Sample AKS store application |
 | [fabric-samples-healthcare](https://github.com/microsoft/fabric-samples) | Healthcare sample for Fabric integration |
 
-Verify the samples were fetched:
-
-```bash
-ls samples/
-```
-
 ---
 
 ### 4. Step 1 — Deploy Primary Baseline
 
 Step 1 provisions all primary-region resources: the App Service or AKS cluster, Azure Functions, SQL Database, Cosmos DB account, Storage accounts, Key Vault, Service Bus namespace, and networking infrastructure.
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
 cd step1-primary-baseline
-./scripts/deploy.sh --topology ../config/topology.json
+bash ./scripts/deploy.sh --topology ../config/topology.json
 ```
 
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+$RepoRoot = git rev-parse --show-toplevel
+Set-Location (Join-Path $RepoRoot "step1-primary-baseline")
+
+bash ./scripts/deploy.sh --topology ../config/topology.json
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Start the Step 1 deployment from Cloud Shell or your workstation.
+2. In the Azure portal, monitor **Resource groups** and **Deployments** as resources appear in the primary region.
+3. Do not proceed until the baseline deployment finishes successfully and outputs the actual resource names you will reuse later.
+
+      </div>
+    </div>
+
 > **⏱ This step takes 15–25 minutes** depending on the services enabled in your topology.
+
+> **💡 Readiness-check note:** The prototype's current readiness checker evaluates some optional services even when your topology disables them. If you intentionally turned off capabilities such as Databricks, Front Door/CDN, or Redis and the pre-check still flags those providers, rerun the command with `--skip-checks`.
 
 The deploy script:
 
@@ -279,43 +694,54 @@ The deploy script:
 
 #### Verify Primary Deployment
 
-After the deployment completes, verify all services are running:
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
-# Check resource groups were created
 az group list --query "[?location=='swedencentral'].name" -o tsv
 
-# Verify the web app is responding
-PRIMARY_APP_URL=$(az webapp show \
-  -g rg-app-swedencentral \
-  -n <your-app-name> \
-  --query defaultHostName -o tsv)
+PRIMARY_APP_URL=$(az webapp show -g rg-app-swedencentral -n <your-app-name> --query defaultHostName -o tsv)
 curl -s -o /dev/null -w "%{http_code}" "https://$PRIMARY_APP_URL/health"
-# Expected: 200
 
-# Verify SQL is accessible
 az sql server list -g rg-data-swedencentral -o table
-
-# Verify Cosmos DB account
-az cosmosdb show \
-  -g rg-data-swedencentral \
-  -n <your-cosmos-account> \
-  --query "readLocations[].locationName" -o tsv
-
-# Verify Service Bus namespace
-az servicebus namespace show \
-  -g rg-messaging-swedencentral \
-  -n <your-sb-namespace> \
-  --query status -o tsv
-# Expected: Active
-
-# Verify Key Vault
-az keyvault show \
-  -g rg-security-swedencentral \
-  -n <your-keyvault> \
-  --query "properties.provisioningState" -o tsv
-# Expected: Succeeded
+az cosmosdb show -g rg-data-swedencentral -n <your-cosmos-account> --query "readLocations[].locationName" -o tsv
+az servicebus namespace show -g rg-messaging-swedencentral -n <your-sb-namespace> --query status -o tsv
+az keyvault show -g rg-security-swedencentral -n <your-keyvault> --query "properties.provisioningState" -o tsv
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az group list --query "[?location=='swedencentral'].name" -o tsv
+
+$PRIMARY_APP_URL = az webapp show -g rg-app-swedencentral -n <your-app-name> --query defaultHostName -o tsv
+(Invoke-WebRequest -UseBasicParsing -Uri "https://$PRIMARY_APP_URL/health").StatusCode
+
+az sql server list -g rg-data-swedencentral -o table
+az cosmosdb show -g rg-data-swedencentral -n <your-cosmos-account> --query "readLocations[].locationName" -o tsv
+az servicebus namespace show -g rg-messaging-swedencentral -n <your-sb-namespace> --query status -o tsv
+az keyvault show -g rg-security-swedencentral -n <your-keyvault> --query "properties.provisioningState" -o tsv
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open each primary-region resource group and verify the expected services exist.
+2. Browse to the primary web app or API health endpoint from the **Overview** page.
+3. Confirm the SQL server, Cosmos DB account, Service Bus namespace, and Key Vault each show healthy provisioning state in their overview blades.
+4. Replace the placeholder names in the CLI tabs with the actual names the deployment produced.
+
+      </div>
+    </div>
 
 > **📝 Note:** The deploy script outputs the actual resource names. Replace the `<your-*>` placeholders above with those values.
 
@@ -334,45 +760,56 @@ At this point you have a fully working single-region application. This mirrors w
 
 Step 2 scans the Azure Resource Manager API, evaluates candidate secondary regions, and produces a recommendation report.
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
 cd ../step2-discover-recommend
-pwsh scripts/run-discovery.ps1 -TopologyFile ../config/topology.json
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+pwsh scripts/run-discovery.ps1 -SubscriptionId $SUBSCRIPTION_ID -TopologyFile ../config/topology.json
+
+jq '{primaryRegion, recommendedSecondaryRegion, totalRecommendations: (.recommendations | length)}' outputs/recommendations.json
+jq '.candidates | sort_by(-.compositeScore) | .[:5] | map({region, compositeScore})' outputs/region-scorecard.json
+jq '.recommendations[] | {resourceType, targetRegion, action: (.step3Action.script // .step3Action.blockReason // "manual")}' outputs/recommendations.json
 ```
 
-The discovery script:
+      </div>
 
-1. **Inventories deployed services** — scans your primary resource groups to catalog every resource type
-2. **Queries ARM for service availability** — checks which candidate regions support each deployed service
-3. **Scores candidate regions** using the weighted model:
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
-   | Criterion | Weight |
-   |-----------|--------|
-   | Service coverage | 40% |
-   | Availability Zone support | 25% |
-   | Cost (relative pricing) | 20% |
-   | Network latency | 10% |
-   | Compliance / data residency | 5% |
+```powershell
+Set-Location ..\step2-discover-recommend
+$SubscriptionId = az account show --query id -o tsv
+pwsh ./scripts/run-discovery.ps1 -SubscriptionId $SubscriptionId -TopologyFile ../config/topology.json
 
-4. **Produces three outputs:**
-   - **Discovery report** — full inventory of primary resources and their replication options
-   - **Region scoring matrix** — ranked list of candidate regions with composite scores
-   - **Per-service recommendations** — specific replication strategy for each service
+(Get-Content .\outputs\recommendations.json -Raw | ConvertFrom-Json) |
+  Select-Object primaryRegion, recommendedSecondaryRegion, @{Name='totalRecommendations';Expression={$_.recommendations.Count}}
 
-#### Review the Outputs
+(Get-Content .\outputs\region-scorecard.json -Raw | ConvertFrom-Json).candidates |
+  Sort-Object -Property compositeScore -Descending |
+  Select-Object -First 5 region, compositeScore
 
-```bash
-# View the discovery report
-cat output/discovery-report.json | jq \
-  '.services[] | {type: .resourceType, replicationOptions: .replicationOptions}'
-
-# View the region scoring results
-cat output/region-scores.json | jq \
-  '.regions | sort_by(-.compositeScore) | .[:5]'
-
-# View per-service recommendations
-cat output/recommendations.json | jq \
-  '.recommendations[] | {service: .service, strategy: .recommendedStrategy, targetRegion: .targetRegion}'
+(Get-Content .\outputs\recommendations.json -Raw | ConvertFrom-Json).recommendations |
+  Select-Object resourceType, targetRegion, @{Name='action';Expression={$_.step3Action.script ?? $_.step3Action.blockReason ?? 'manual'}}
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Run the discovery step from your terminal or Cloud Shell.
+2. Use the Azure portal to spot-check that the discovered primary resources match what was actually deployed.
+3. Open the generated JSON files in your editor and confirm the recommended region aligns with your compliance, service coverage, and cost expectations.
+4. If you need a different secondary region, update `config/topology.json` before you proceed to Step 3.
+
+      </div>
+    </div>
 
 **Expected output for the default Sweden Central → Norway East configuration:**
 
@@ -392,47 +829,63 @@ cat output/recommendations.json | jq \
 
 > **💡 Why Norway East?** It scores highest for EU workloads: 91.5% service coverage of your deployed resource types, full 3-AZ support, comparable pricing, sub-10 ms network latency from Sweden Central, and both regions fall within EU/EEA data residency boundaries. See [`docs/REGION-SELECTION.md`](https://github.com/prwani/multi-region-nonpaired-enterprise-prototype/blob/main/docs/REGION-SELECTION.md) for the full methodology.
 
-If you want to use a different secondary region, update `config/topology.json` and re-run discovery.
-
 ---
 
 ### 6. Step 3 — Enable Secondary Region
 
 Step 3 deploys secondary-region resources and configures cross-region replication for every service layer. **Always run a dry run first.**
 
-#### 6a. Dry Run
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
 cd ../step3-enable-secondary
-./scripts/orchestrate-secondary.sh --topology ../config/topology.json --dry-run
+bash ./scripts/orchestrate-secondary.sh --topology ../config/topology.json --dry-run
+
+# After reviewing the plan, run the real deployment:
+bash ./scripts/orchestrate-secondary.sh --topology ../config/topology.json --yes
 ```
 
-The dry run:
+      </div>
 
-- Shows every resource that will be created in the secondary region
-- Lists every cross-region replication relationship that will be established
-- Estimates deployment time and cost impact
-- Validates that the secondary region supports all required services
-- **Does not create any resources**
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
-Review the dry-run output carefully. Check that:
+```powershell
+$RepoRoot = git rev-parse --show-toplevel
+Set-Location (Join-Path $RepoRoot "step3-enable-secondary")
 
-- ✅ All expected services are listed
-- ✅ The target region matches your topology
-- ✅ Replication strategies are appropriate (e.g., async for Storage, failover-group for SQL)
-- ✅ No service gaps due to regional availability limitations
+bash ./scripts/orchestrate-secondary.sh --topology ../config/topology.json --dry-run
 
-#### 6b. Execute Secondary Enablement
-
-When you're satisfied with the dry run, execute for real:
-
-```bash
-./scripts/orchestrate-secondary.sh --topology ../config/topology.json
+# After reviewing the plan, run the real deployment:
+bash ./scripts/orchestrate-secondary.sh --topology ../config/topology.json --yes
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Run the dry run first and review the output carefully.
+2. In the Azure portal, watch secondary-region resource groups and deployment operations appear only after you launch the real enablement step.
+3. Verify the target region shown in the dry run matches your topology manifest.
+4. Do not continue until the orchestration completes and the secondary resources finish provisioning.
+
+      </div>
+    </div>
 
 > **⏱ This step takes 20–35 minutes.** It deploys in dependency order — infrastructure first, then data-tier replication, then compute, then networking/DNS.
 
-The orchestration script configures each service layer in sequence:
+The dry run should confirm that:
+
+- ✅ All expected services are listed
+- ✅ The target region matches your topology
+- ✅ Replication strategies are appropriate (for example, async for Storage and failover groups for SQL)
+- ✅ No service gaps exist because of regional availability limitations
 
 ---
 
@@ -442,162 +895,432 @@ After Step 3 completes, verify every cross-region replication relationship.
 
 #### SQL Database — Failover Group ([Lab 3](lab-03-sql-geo-replication.md))
 
-```bash
-# Verify the failover group was created
-az sql failover-group list \
-  -g rg-data-swedencentral \
-  -s <primary-sql-server> -o table
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
 
-# Check replication state
-az sql failover-group show \
-  -g rg-data-swedencentral \
-  -s <primary-sql-server> \
-  -n <fg-name> \
-  --query "replicationState" -o tsv
-# Expected: CATCH_UP or SYNCHRONIZED
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
+az sql failover-group list -g rg-data-swedencentral -s <primary-sql-server> -o table
+az sql failover-group show -g rg-data-swedencentral -s <primary-sql-server> -n <fg-name> --query "replicationState" -o tsv
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az sql failover-group list -g rg-data-swedencentral -s <primary-sql-server> -o table
+az sql failover-group show -g rg-data-swedencentral -s <primary-sql-server> -n <fg-name> --query "replicationState" -o tsv
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the primary SQL server.
+2. Go to **Failover groups**.
+3. Confirm the failover group exists and the secondary server is attached.
+4. Verify the replication state is healthy (`CATCH_UP` or `SYNCHRONIZED`).
+
+      </div>
+    </div>
 
 #### Cosmos DB — Multi-Region ([Lab 4](lab-04-cosmos-global-distribution.md))
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-# Verify both regions are active
-az cosmosdb show \
-  -g rg-data-swedencentral \
-  -n <cosmos-account> \
-  --query "readLocations[].{region: locationName, priority: failoverPriority}" -o table
+az cosmosdb show -g rg-data-swedencentral -n <cosmos-account> --query "readLocations[].{region: locationName, priority: failoverPriority}" -o table
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az cosmosdb show -g rg-data-swedencentral -n <cosmos-account> --query "readLocations[].{region: locationName, priority: failoverPriority}" -o table
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the Cosmos DB account.
+2. Go to **Replicate data globally**.
+3. Confirm both **Sweden Central** and **Norway East** appear in the regional map and the priorities match your design.
+
+      </div>
+    </div>
 
 #### Storage — Object Replication ([Lab 2](lab-02-blob-storage-replication.md))
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-# Verify replication policy
-az storage account or-policy list \
-  --account-name <primary-storage> -o table
+az storage account or-policy list --account-name <primary-storage> -o table
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az storage account or-policy list --account-name <primary-storage> -o table
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the primary storage account.
+2. Go to **Data management** → **Object replication**.
+3. Confirm the replication policy targets the secondary account and reports a healthy state.
+
+      </div>
+    </div>
 
 #### Service Bus — Geo-DR Alias ([Lab 6](lab-06-service-bus-geo-dr.md))
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-# Verify alias is active
-az servicebus georecovery-alias show \
-  -g rg-messaging-swedencentral \
-  --namespace-name <primary-sb-namespace> \
-  --alias <alias-name> \
-  --query "role" -o tsv
-# Expected: Primary
+az servicebus georecovery-alias show -g rg-messaging-swedencentral --namespace-name <primary-sb-namespace> --alias <alias-name> --query "role" -o tsv
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az servicebus georecovery-alias show -g rg-messaging-swedencentral --namespace-name <primary-sb-namespace> --alias <alias-name> --query "role" -o tsv
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the primary Service Bus namespace.
+2. Go to **Geo-recovery**.
+3. Confirm the alias exists and the namespace reports the **Primary** role.
+
+      </div>
+    </div>
 
 #### Key Vault — Secret Sync ([Lab 5](lab-05-key-vault-multi-region.md))
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-# Verify secrets exist in secondary vault
-az keyvault secret list \
-  --vault-name <secondary-keyvault> \
-  --query "[].name" -o tsv
+az keyvault secret list --vault-name <secondary-keyvault> --query "[].name" -o tsv
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az keyvault secret list --vault-name <secondary-keyvault> --query "[].name" -o tsv
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the secondary Key Vault.
+2. Go to **Secrets**.
+3. Confirm the expected application secrets exist in the secondary vault.
+
+      </div>
+    </div>
 
 #### Event Hubs — Geo-Replication ([Lab 7](lab-07-event-hubs-geo-replication.md))
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-# Verify geo-replication status (if Event Hubs enabled)
-az eventhubs georecovery-alias show \
-  -g rg-messaging-swedencentral \
-  --namespace-name <primary-eh-namespace> \
-  --alias <eh-alias-name> \
-  --query "role" -o tsv
+az eventhubs georecovery-alias show -g rg-messaging-swedencentral --namespace-name <primary-eh-namespace> --alias <eh-alias-name> --query "role" -o tsv
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az eventhubs georecovery-alias show -g rg-messaging-swedencentral --namespace-name <primary-eh-namespace> --alias <eh-alias-name> --query "role" -o tsv
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the primary Event Hubs namespace.
+2. Go to **Geo-recovery**.
+3. Confirm the alias exists and the namespace role is healthy.
+
+      </div>
+    </div>
 
 #### Container Registry — Geo-Replica ([Lab 8](lab-08-acr-geo-replication.md))
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-# Verify replications (if ACR is used)
 az acr replication list -r <acr-name> -o table
 ```
 
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az acr replication list -r <acr-name> -o table
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the Azure Container Registry.
+2. Go to **Replications**.
+3. Confirm a Norway East replication exists and is healthy.
+
+      </div>
+    </div>
+
 #### Front Door / Traffic Manager — Global Endpoint ([Lab 1](lab-01-webapp-traffic-manager.md))
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-# Verify both backends are configured
-az network front-door show \
-  -g rg-global \
-  -n <frontdoor-name> \
-  --query "backendPools[0].backends[].address" -o tsv
-# Should show both primary and secondary app URLs
+az network front-door show -g rg-global -n <frontdoor-name> --query "backendPools[0].backends[].address" -o tsv
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az network front-door show -g rg-global -n <frontdoor-name> --query "backendPools[0].backends[].address" -o tsv
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open Azure Front Door or Traffic Manager.
+2. Confirm both primary and secondary backends/origins are configured.
+3. Verify health probes show the expected backend as healthy before you test failover.
+
+      </div>
+    </div>
 
 ---
 
 ### 8. Test the Running Application
 
-With both regions fully deployed and all replication configured, access the application through the global endpoint:
+With both regions fully deployed and all replication configured, access the application through the global endpoint.
+
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
-# Get the global endpoint URL
-GLOBAL_URL=$(az network front-door show \
-  -g rg-global \
-  -n <frontdoor-name> \
-  --query "frontendEndpoints[0].hostName" -o tsv)
+GLOBAL_URL=$(az network front-door show -g rg-global -n <frontdoor-name> --query "frontendEndpoints[0].hostName" -o tsv)
 
 echo "Application URL: https://$GLOBAL_URL"
-
-# Test the health endpoint
 curl -s "https://$GLOBAL_URL/health"
-# Expected: {"status":"healthy","region":"swedencentral","timestamp":"..."}
-
-# Verify data flows end-to-end
 curl -s "https://$GLOBAL_URL/api/status" | jq .
 ```
 
-You should see a healthy response served from Sweden Central (the primary). Traffic Manager / Front Door directs all traffic to the primary while it is healthy.
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+$GLOBAL_URL = az network front-door show -g rg-global -n <frontdoor-name> --query "frontendEndpoints[0].hostName" -o tsv
+
+Write-Host "Application URL: https://$GLOBAL_URL"
+Invoke-RestMethod "https://$GLOBAL_URL/health" | ConvertTo-Json -Depth 10
+Invoke-RestMethod "https://$GLOBAL_URL/api/status" | ConvertTo-Json -Depth 10
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open Azure Front Door / Traffic Manager and copy the public frontend hostname.
+2. Browse to the application URL.
+3. Confirm the health or status endpoint reports the primary region (`swedencentral`).
+4. Verify the application is healthy before you simulate a failure.
+
+      </div>
+    </div>
+
+You should see a healthy response served from Sweden Central (the primary). Front Door / Traffic Manager directs all traffic to the primary while it is healthy.
 
 ---
 
 ### 9. Simulate a Disaster
 
-Now test that coordinated failover actually works. There are two approaches:
+Now test that coordinated failover actually works. There are two approaches.
 
-#### Option A: Manual Service Stoppage
+#### Trigger the Failure
 
-Stop the primary-region compute resources to simulate a regional outage:
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
-# Stop the primary web app
+# Option A: stop primary compute
 az webapp stop -g rg-app-swedencentral -n <primary-app-name>
-
-# Stop primary Functions (if applicable)
 az functionapp stop -g rg-app-swedencentral -n <primary-functions-name>
+
+# Option B: start a Chaos Studio experiment instead
+az rest --method POST --url "https://management.azure.com/subscriptions/<sub-id>/resourceGroups/rg-chaos/providers/Microsoft.Chaos/experiments/<experiment-name>/start?api-version=2024-01-01"
 ```
 
-#### Option B: Azure Chaos Studio (Recommended)
+      </div>
 
-Use Chaos Studio to inject faults — this is more realistic and tests the full failover path including health probe detection. See [Lab 1](lab-01-webapp-traffic-manager.md) for detailed Chaos Studio experiment setup.
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
 
-```bash
-# Start a chaos experiment targeting primary compute
-az rest --method POST \
-  --url "https://management.azure.com/subscriptions/<sub-id>/resourceGroups/rg-chaos/providers/Microsoft.Chaos/experiments/<experiment-name>/start?api-version=2024-01-01"
+```powershell
+# Option A: stop primary compute
+az webapp stop -g rg-app-swedencentral -n <primary-app-name>
+az functionapp stop -g rg-app-swedencentral -n <primary-functions-name>
+
+# Option B: start a Chaos Studio experiment instead
+az rest --method POST --url "https://management.azure.com/subscriptions/<sub-id>/resourceGroups/rg-chaos/providers/Microsoft.Chaos/experiments/<experiment-name>/start?api-version=2024-01-01"
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. For a simple test, open the primary **Web App** and **Function App** and use **Stop**.
+2. For a more realistic drill, open **Chaos Studio** and start the experiment that targets the primary compute tier.
+3. Record the time you initiated the fault so you can compare it with the observed failover time.
+
+      </div>
+    </div>
 
 #### Monitor the Failover
 
-After stopping primary services (or starting the chaos experiment), monitor the transition:
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
-# Poll the global endpoint — watch for region change
 for i in $(seq 1 20); do
   RESPONSE=$(curl -s "https://$GLOBAL_URL/health" 2>/dev/null)
   REGION=$(echo "$RESPONSE" | jq -r '.region // "unreachable"')
   echo "$(date +%H:%M:%S) — Region: $REGION"
   sleep 15
 done
-```
 
-After 30–90 seconds (depending on health probe interval and DNS TTL):
-
-```bash
 curl -s "https://$GLOBAL_URL/health"
-# Expected: {"status":"healthy","region":"norwayeast","timestamp":"..."}
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+for ($i = 1; $i -le 20; $i++) {
+  try {
+    $Response = Invoke-RestMethod "https://$GLOBAL_URL/health"
+    $Region = $Response.region
+  } catch {
+    $Region = 'unreachable'
+  }
+  Write-Host "$(Get-Date -Format HH:mm:ss) — Region: $Region"
+  Start-Sleep -Seconds 15
+}
+
+Invoke-RestMethod "https://$GLOBAL_URL/health" | ConvertTo-Json -Depth 10
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Watch the global endpoint from a browser or the Front Door / Traffic Manager monitoring views.
+2. Confirm the primary backend starts failing health probes.
+3. Within the expected health probe and DNS interval, verify requests begin landing in **Norway East**.
+4. Keep notes on the observed failover time so you can compare it with your target RTO.
+
+      </div>
+    </div>
+
+After 30–90 seconds (depending on health probe interval and DNS TTL), the health response should come from `norwayeast`.
 
 The key observation: **the global endpoint URL did not change.** Front Door / Traffic Manager detected the primary failure through health probes and automatically routed traffic to the secondary in Norway East.
 
@@ -605,43 +1328,50 @@ The key observation: **the global endpoint URL did not change.** Front Door / Tr
 
 ### 10. Verify Failover — All Layers
 
-Failover is not just about compute. Verify that every service layer is operating correctly from the secondary region:
+Failover is not just about compute. Verify that every service layer is operating correctly from the secondary region.
+
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
-# 1. Web tier — application is serving from Norway East
 curl -s "https://$GLOBAL_URL/api/status" | jq '.region'
-# Expected: "norwayeast"
-
-# 2. SQL Database — failover group switched
-az sql failover-group show \
-  -g rg-data-swedencentral \
-  -s <primary-sql-server> \
-  -n <fg-name> \
-  --query "{primary: replicationRole, state: replicationState}" -o json
-
-# 3. Cosmos DB — reads/writes succeeding in secondary
+az sql failover-group show -g rg-data-swedencentral -s <primary-sql-server> -n <fg-name> --query "{primary: replicationRole, state: replicationState}" -o json
 curl -s "https://$GLOBAL_URL/api/data/test" | jq '.source'
-# Expected: data served from norwayeast replica
-
-# 4. Service Bus — alias pointing to secondary
-az servicebus georecovery-alias show \
-  -g rg-messaging-swedencentral \
-  --namespace-name <primary-sb-namespace> \
-  --alias <alias-name> \
-  --query "pendingReplicationOperationsCount" -o tsv
-
-# 5. Key Vault — secrets accessible from secondary
-az keyvault secret show \
-  --vault-name <secondary-keyvault> \
-  -n app-connection-string \
-  --query "value" -o tsv
-
-# 6. Storage — blobs accessible from secondary account
-az storage blob list \
-  --account-name <secondary-storage> \
-  -c app-data \
-  --query "[].name" -o tsv
+az servicebus georecovery-alias show -g rg-messaging-swedencentral --namespace-name <primary-sb-namespace> --alias <alias-name> --query "pendingReplicationOperationsCount" -o tsv
+az keyvault secret show --vault-name <secondary-keyvault> -n app-connection-string --query "id" -o tsv
+az storage blob list --account-name <secondary-storage> -c app-data --query "[].name" -o tsv
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+(Invoke-RestMethod "https://$GLOBAL_URL/api/status").region
+az sql failover-group show -g rg-data-swedencentral -s <primary-sql-server> -n <fg-name> --query "{primary: replicationRole, state: replicationState}" -o json
+(Invoke-RestMethod "https://$GLOBAL_URL/api/data/test").source
+az servicebus georecovery-alias show -g rg-messaging-swedencentral --namespace-name <primary-sb-namespace> --alias <alias-name> --query "pendingReplicationOperationsCount" -o tsv
+az keyvault secret show --vault-name <secondary-keyvault> -n app-connection-string --query "id" -o tsv
+az storage blob list --account-name <secondary-storage> -c app-data --query "[].name" -o tsv
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Confirm the application now reports **Norway East** in its status endpoint or UI.
+2. Check the SQL failover group, Cosmos DB regional map, Service Bus alias, and storage replication state in the portal.
+3. Verify the secondary Key Vault contains the expected application secrets without exposing secret values unnecessarily.
+4. Confirm the storage account in the secondary region contains the expected application data.
+
+      </div>
+    </div>
 
 > **🔑 Key insight:** In a production scenario, SQL Failover Group failover is **automatic** (when configured in auto-failover mode). Service Bus and Event Hubs alias failover must be **manually initiated** (or automated via runbook). Cosmos DB handles failover **automatically** when automatic failover is enabled. Understanding which services fail over automatically vs. manually is critical for your RTO.
 
@@ -651,22 +1381,47 @@ az storage blob list \
 
 Failover gets the headlines, but **failback** is often more complex and less tested. Review the prototype's failover runbook:
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
+cd "$(git rev-parse --show-toplevel)"
 cat docs/failover-runbook.md
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+Set-Location (git rev-parse --show-toplevel)
+Get-Content ./docs/failover-runbook.md
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open `docs/failover-runbook.md` in your editor or in the repository browser.
+2. Review the documented failback sequencing before you restore primary traffic.
+3. Make sure the on-call and operations assumptions in the runbook match your environment.
+
+      </div>
+    </div>
 
 Key failback considerations:
 
 1. **Data synchronization direction reversal** — after failover, the secondary becomes the new primary for writes. Before failing back, you need to ensure data written to the (former) secondary is replicated back to the original primary.
-
 2. **SQL Failover Group failback** — reverse the failover group so the original primary becomes primary again. This requires the original primary to be healthy and caught up.
-
 3. **Service Bus re-pairing** — after a geo-DR failover, the pairing is **broken**. You must delete the old pairing and re-create it in the original direction. This is not instantaneous.
-
 4. **Cosmos DB region priority** — update the failover priority list to restore the original primary as the preferred write region.
-
 5. **DNS TTL propagation** — Front Door / Traffic Manager DNS changes take time to propagate. Monitor TTL expiration to confirm all clients are routing correctly.
-
 6. **Application state** — clear caches, reset circuit breakers, and verify connection pools have reconnected to the restored primary.
 
 > **⚠️ Warning:** Never fail back without verifying that the original primary region is fully healthy and all data replication has caught up. A premature failback can cause data loss or split-brain scenarios.
@@ -677,34 +1432,62 @@ For detailed step-by-step failback procedures, see: [`docs/failover-runbook.md`]
 
 ### 12. Restore Primary Services
 
-If you used Option A (manual stoppage), restart the primary services:
+If you used Option A (manual stoppage), restart the primary services.
+
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
-# Restart primary web app
 az webapp start -g rg-app-swedencentral -n <primary-app-name>
-
-# Restart primary Functions
 az functionapp start -g rg-app-swedencentral -n <primary-functions-name>
 
-# Verify primary is healthy again
-PRIMARY_APP_URL=$(az webapp show \
-  -g rg-app-swedencentral \
-  -n <primary-app-name> \
-  --query defaultHostName -o tsv)
+PRIMARY_APP_URL=$(az webapp show -g rg-app-swedencentral -n <primary-app-name> --query defaultHostName -o tsv)
 curl -s "https://$PRIMARY_APP_URL/health"
-# Expected: 200 OK with region: swedencentral
-```
 
-Within a few minutes, Front Door / Traffic Manager will detect the primary is healthy again and route traffic back (if configured for automatic failback). Monitor:
-
-```bash
-# Watch traffic shift back to primary
 for i in $(seq 1 10); do
   REGION=$(curl -s "https://$GLOBAL_URL/health" | jq -r '.region // "unknown"')
   echo "$(date +%H:%M:%S) — Serving from: $REGION"
   sleep 15
 done
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az webapp start -g rg-app-swedencentral -n <primary-app-name>
+az functionapp start -g rg-app-swedencentral -n <primary-functions-name>
+
+$PRIMARY_APP_URL = az webapp show -g rg-app-swedencentral -n <primary-app-name> --query defaultHostName -o tsv
+Invoke-RestMethod "https://$PRIMARY_APP_URL/health" | ConvertTo-Json -Depth 10
+
+for ($i = 1; $i -le 10; $i++) {
+  $Region = (Invoke-RestMethod "https://$GLOBAL_URL/health").region
+  Write-Host "$(Get-Date -Format HH:mm:ss) — Serving from: $Region"
+  Start-Sleep -Seconds 15
+}
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Start the primary web app and function app from their **Overview** blades.
+2. Watch Front Door / Traffic Manager health probes turn green again for the primary backend.
+3. Confirm the application eventually serves from **Sweden Central** again if your design supports automatic failback.
+4. Record the recovery time and any operational surprises.
+
+      </div>
+    </div>
+
+Within a few minutes, Front Door / Traffic Manager should detect the primary is healthy again and route traffic back if your configuration supports it.
 
 ---
 
@@ -714,9 +1497,41 @@ Multi-region deployments double (or more) your resource costs. The prototype inc
 
 #### Pause All Resources
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-./scripts/pause-all.sh
+cd "$(git rev-parse --show-toplevel)"
+bash ./scripts/pause-all.sh --topology ./config/topology.json
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+$RepoRoot = git rev-parse --show-toplevel
+Set-Location $RepoRoot
+
+bash ./scripts/pause-all.sh --topology ./config/topology.json
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Run the pause script from Cloud Shell or your workstation.
+2. In the portal, verify compute resources show **Stopped** or scaled down afterward.
+3. Confirm databases or clusters that should remain allocated are still reachable according to the script's behavior.
+
+      </div>
+    </div>
 
 This script:
 
@@ -727,9 +1542,41 @@ This script:
 
 #### Resume All Resources
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-./scripts/resume-all.sh
+cd "$(git rev-parse --show-toplevel)"
+bash ./scripts/resume-all.sh --topology ./config/topology.json
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+$RepoRoot = git rev-parse --show-toplevel
+Set-Location $RepoRoot
+
+bash ./scripts/resume-all.sh --topology ./config/topology.json
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Run the resume script from Cloud Shell or your workstation.
+2. In the portal, confirm the paused resources return to a healthy running state.
+3. Recheck the application health endpoint after resume completes.
+
+      </div>
+    </div>
 
 Restarts all paused resources and verifies health across both regions.
 
@@ -737,9 +1584,41 @@ Restarts all paused resources and verifies health across both regions.
 
 If you want to keep the primary running but remove the secondary to save costs:
 
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
 ```bash
-./scripts/decouple-secondary.sh
+cd "$(git rev-parse --show-toplevel)"
+bash ./scripts/decouple-secondary.sh --topology ./config/topology.json --yes
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+$RepoRoot = git rev-parse --show-toplevel
+Set-Location $RepoRoot
+
+bash ./scripts/decouple-secondary.sh --topology ./config/topology.json --yes
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Use this option only when you intentionally want to break secondary-region protection.
+2. Run the script from Cloud Shell or your workstation.
+3. In the portal, verify the replication relationships are removed cleanly before any secondary resources are deleted.
+
+      </div>
+    </div>
 
 This cleanly breaks all cross-region replication relationships before removing secondary resources. It is preferable to directly deleting secondary resource groups, which could leave orphaned replication configurations on the primary side.
 
@@ -747,11 +1626,47 @@ This cleanly breaks all cross-region replication relationships before removing s
 
 ### 14. Cleanup
 
-When you are done with the lab, remove all deployed resources:
+When you are done with the lab, remove all deployed resources.
+
+<div class="lab-tabs">
+      <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+        <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+        <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+        <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+      </div>
+
+      <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
 ```bash
-./scripts/cleanup-all.sh
+cd "$(git rev-parse --show-toplevel)"
+bash ./scripts/cleanup-all.sh --topology ./config/topology.json --yes
+
+az group list --query "[?starts_with(name, 'rg-contoso-') || starts_with(name, 'MC_rg-contoso-')].name" -o tsv
 ```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+$RepoRoot = git rev-parse --show-toplevel
+Set-Location $RepoRoot
+
+bash ./scripts/cleanup-all.sh --topology ./config/topology.json --yes
+
+az group list --query "[?starts_with(name, 'rg-contoso-') || starts_with(name, 'MC_rg-contoso-')].name" -o tsv
+```
+
+      </div>
+
+      <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Run the cleanup script from Cloud Shell or your workstation.
+2. In the Azure portal, refresh **Resource groups** and confirm the lab groups disappear as the cleanup progresses.
+3. If you use soft-delete features such as Key Vault recovery, verify any optional purge steps before you walk away.
+
+      </div>
+    </div>
 
 The cleanup script:
 
@@ -763,12 +1678,6 @@ The cleanup script:
 6. Purges soft-deleted Key Vaults (optional — prompts for confirmation)
 
 > **⚠️ This is destructive and irreversible.** Verify you want to remove everything before confirming.
-
-```bash
-# Verify all resource groups are deleted
-az group list --query "[?contains(name, 'rg-')].name" -o tsv
-# Expected: no results (or only unrelated resource groups)
-```
 
 ---
 
@@ -899,17 +1808,11 @@ Here is what you accomplished across the entire series:
 ### Key Takeaways
 
 1. **Multi-region is a system property, not a service property.** Each service has its own DR mechanism, but resilience only emerges from coordinating all of them together.
-
 2. **Topology-driven deployment** — a single manifest (`config/topology.json`) ensures consistency across every resource, region, and subscription.
-
 3. **Region selection is data-driven** — weighted scoring across service coverage (40%), AZ support (25%), cost (20%), latency (10%), and compliance (5%) gives you a defensible, repeatable choice.
-
 4. **Test failover regularly** — an untested DR plan is just a document. Use Chaos Studio, game days, and tabletop exercises to validate your runbooks.
-
 5. **Failback is harder than failover** — plan for it, script it, test it. Don't assume it's just "failover in reverse."
-
 6. **Cost management matters** — use `pause-all.sh` and `resume-all.sh` to control secondary region costs. Right-size secondary resources: they don't need to match primary capacity until failover occurs.
-
 7. **The three-step model scales** — Primary Baseline → Discover & Recommend → Enable Secondary works whether you have 3 services or 30.
 
 ### Further Reading

@@ -8,7 +8,7 @@ echo "============================================"
 RANDOM_SUFFIX=$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 5)
 EH_PRIMARY="eh-dr-swc-${RANDOM_SUFFIX}"
 EH_SECONDARY="eh-dr-noe-${RANDOM_SUFFIX}"
-EH_ALIAS="eh-alias-multiregion"
+EH_ALIAS="eh-alias-${RANDOM_SUFFIX}"
 EH_NAME="events-telemetry"
 CG_NAME="analytics-cg"
 RG_PRIMARY="rg-eh-primary-${RANDOM_SUFFIX}"
@@ -94,7 +94,7 @@ az eventhubs georecovery-alias set \
   --namespace-name "$EH_PRIMARY" \
   --alias "$EH_ALIAS" \
   --partner-namespace "$SECONDARY_ID" \
-  -o none 2>&1 || echo "  Note: command may not produce output"
+  -o none
 echo "  OK: alias $EH_ALIAS created"
 
 echo ""
@@ -113,6 +113,11 @@ for i in $(seq 1 30); do
   sleep 10
 done
 
+if [ "$STATE" != "Succeeded" ]; then
+  echo "  ERROR: Geo-DR alias provisioning did not succeed (last state: $STATE)" >&2
+  exit 1
+fi
+
 echo ""
 echo ">>> Step 9: Verifying entities replicated to secondary..."
 echo "  === Event Hubs on secondary ==="
@@ -130,22 +135,64 @@ az eventhubs eventhub consumer-group list \
 
 echo ""
 echo ">>> Step 10: Initiating failover..."
-az eventhubs georecovery-alias fail-over \
-  --resource-group "$RG_SECONDARY" \
-  --namespace-name "$EH_SECONDARY" \
-  --alias "$EH_ALIAS" \
-  -o none 2>&1 || echo "  Note: failover command may not produce output"
-echo "  OK: failover initiated"
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+FAILOVER_LOG="/tmp/lab7-failover-${RANDOM_SUFFIX}.log"
+FAILOVER_REQUESTED=0
+for i in $(seq 1 12); do
+  if az rest \
+    --method post \
+    --uri "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_SECONDARY/providers/Microsoft.EventHub/namespaces/$EH_SECONDARY/disasterRecoveryConfigs/$EH_ALIAS/failover?api-version=2023-01-01-preview" \
+    -o none >"$FAILOVER_LOG" 2>&1; then
+    FAILOVER_REQUESTED=1
+    break
+  fi
 
-sleep 15
+  if grep -q "NamespaceInTransition" "$FAILOVER_LOG"; then
+    echo "  Attempt $i: namespace still transitioning, retrying..."
+    sleep 15
+    continue
+  fi
+
+  cat "$FAILOVER_LOG" >&2
+  exit 1
+done
+
+rm -f "$FAILOVER_LOG"
+
+if [ "$FAILOVER_REQUESTED" -ne 1 ]; then
+  echo "  ERROR: failover request never succeeded after retries" >&2
+  exit 1
+fi
+
+echo "  OK: failover initiated"
 
 echo ""
 echo ">>> Step 11: Verifying alias points to secondary..."
-ROLE=$(az eventhubs georecovery-alias show \
-  --resource-group "$RG_SECONDARY" \
-  --namespace-name "$EH_SECONDARY" \
-  --alias "$EH_ALIAS" \
-  --query "role" -o tsv 2>/dev/null || echo "unknown")
+FAILOVER_STATE="pending"
+ROLE="unknown"
+for i in $(seq 1 24); do
+  ROLE=$(az eventhubs georecovery-alias show \
+    --resource-group "$RG_SECONDARY" \
+    --namespace-name "$EH_SECONDARY" \
+    --alias "$EH_ALIAS" \
+    --query "role" -o tsv 2>/dev/null || echo "unknown")
+  FAILOVER_STATE=$(az eventhubs georecovery-alias show \
+    --resource-group "$RG_SECONDARY" \
+    --namespace-name "$EH_SECONDARY" \
+    --alias "$EH_ALIAS" \
+    --query "provisioningState" -o tsv 2>/dev/null || echo "pending")
+  echo "  Attempt $i: role=$ROLE state=$FAILOVER_STATE"
+  if [[ "$ROLE" == Primary* && "$FAILOVER_STATE" == "Succeeded" ]]; then
+    break
+  fi
+  sleep 10
+done
+
+if [[ "$ROLE" != Primary* || "$FAILOVER_STATE" != "Succeeded" ]]; then
+  echo "  ERROR: failover did not complete successfully (role=$ROLE state=$FAILOVER_STATE)" >&2
+  exit 1
+fi
+
 echo "  Secondary role after failover: $ROLE"
 
 echo ""
@@ -167,5 +214,5 @@ echo "  Event Hub:           PASS"
 echo "  Consumer Group:      PASS"
 echo "  Geo-DR Alias:        $STATE"
 echo "  Metadata Replicated: see above"
-echo "  Failover:            Role=$ROLE"
+echo "  Failover:            Role=$ROLE State=$FAILOVER_STATE"
 echo "========================================="

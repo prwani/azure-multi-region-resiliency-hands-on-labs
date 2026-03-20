@@ -6,8 +6,8 @@ echo "  LAB 5: Key Vault Multi-Region Sync        "
 echo "============================================"
 
 UNIQUE_SUFFIX="l5$(date +%s | tail -c 4)"
-RG_PRIMARY="rg-dr-swc"
-RG_SECONDARY="rg-dr-noe"
+RG_PRIMARY="rg-dr-swc-${UNIQUE_SUFFIX}"
+RG_SECONDARY="rg-dr-noe-${UNIQUE_SUFFIX}"
 LOCATION_PRIMARY="swedencentral"
 LOCATION_SECONDARY="norwayeast"
 KV_PRIMARY="kv-dr-swc-${UNIQUE_SUFFIX}"
@@ -20,6 +20,8 @@ echo "KV_PRIMARY=$KV_PRIMARY"
 echo "KV_SECONDARY=$KV_SECONDARY"
 
 cat > /tmp/lab5_vars.env <<EOF
+RG_PRIMARY=$RG_PRIMARY
+RG_SECONDARY=$RG_SECONDARY
 KV_PRIMARY=$KV_PRIMARY
 KV_SECONDARY=$KV_SECONDARY
 BACKUP_DIR=$BACKUP_DIR
@@ -85,7 +87,9 @@ az keyvault secret set --vault-name "$KV_PRIMARY" --name "StorageAccountKey" \
   --value "DefaultEndpointsProtocol=https;AccountName=stdrswc;AccountKey=FAKE+KEY==" -o none
 az keyvault secret set --vault-name "$KV_PRIMARY" --name "AppInsightsKey" \
   --value "00000000-0000-0000-0000-000000000000" -o none
-echo "  OK: 3 secrets added"
+az keyvault secret set --vault-name "$KV_PRIMARY" --name "ApiKey-ExternalService" \
+  --value "sk-demo-external-api-key-12345" -o none
+echo "  OK: 4 secrets added"
 
 echo ""
 echo ">>> Step 7: Creating a sample key..."
@@ -104,6 +108,7 @@ echo ">>> Step 9: Backing up secrets, key, and certificate..."
 az keyvault secret backup --vault-name "$KV_PRIMARY" --name "DatabaseConnectionString" --file "$BACKUP_DIR/DatabaseConnectionString.bak" -o none
 az keyvault secret backup --vault-name "$KV_PRIMARY" --name "StorageAccountKey" --file "$BACKUP_DIR/StorageAccountKey.bak" -o none
 az keyvault secret backup --vault-name "$KV_PRIMARY" --name "AppInsightsKey" --file "$BACKUP_DIR/AppInsightsKey.bak" -o none
+az keyvault secret backup --vault-name "$KV_PRIMARY" --name "ApiKey-ExternalService" --file "$BACKUP_DIR/ApiKey-ExternalService.bak" -o none
 az keyvault key backup --vault-name "$KV_PRIMARY" --name "EncryptionKey" --file "$BACKUP_DIR/EncryptionKey.bak" -o none
 az keyvault certificate backup --vault-name "$KV_PRIMARY" --name "AppCert" --file "$BACKUP_DIR/AppCert.bak" -o none
 echo "  OK: all items backed up"
@@ -111,8 +116,8 @@ ls -la "$BACKUP_DIR"
 
 echo ""
 echo ">>> Step 10: Syncing secrets to secondary vault (read-and-recreate)..."
-# Backup/restore requires same Azure geography; Sweden & Norway are separate geographies.
-# Use the read-and-recreate approach from Lab 5 Step 10 instead.
+# Backup blobs are created successfully, but restoring them into the Norway East lab vault returns `Malformed backup blob`.
+# Use the validated read-and-recreate approach for this lab topology instead.
 for SECRET_NAME in $(az keyvault secret list --vault-name "$KV_PRIMARY" --query "[].name" -o tsv); do
   echo "  Syncing secret: $SECRET_NAME"
   SECRET_VALUE=$(az keyvault secret show --vault-name "$KV_PRIMARY" --name "$SECRET_NAME" --query "value" -o tsv)
@@ -120,11 +125,17 @@ for SECRET_NAME in $(az keyvault secret list --vault-name "$KV_PRIMARY" --query 
 done
 echo "  OK: secrets synced to $KV_SECONDARY"
 
+SECRET_COUNT=$(az keyvault secret list --vault-name "$KV_SECONDARY" --query "length(@)" -o tsv)
+if [ "$SECRET_COUNT" -ne 4 ]; then
+  echo "  ERROR: expected 4 synced secrets in secondary, found $SECRET_COUNT" >&2
+  exit 1
+fi
+
 echo ""
 echo ">>> Step 10b: Creating key in secondary vault..."
 az keyvault key create --vault-name "$KV_SECONDARY" --name "EncryptionKey" \
   --kty RSA --size 2048 --ops encrypt decrypt sign verify -o none
-echo "  OK: EncryptionKey created in secondary (new key material — backup/restore not possible cross-geography)"
+echo "  OK: EncryptionKey created in secondary (new key material — direct restore not used for this lab pair)"
 
 echo ""
 echo ">>> Step 10c: Creating certificate in secondary vault..."
@@ -162,11 +173,11 @@ echo "========================================="
 echo "  Resource Groups:     PASS"
 echo "  Key Vaults:          PASS"
 echo "  RBAC Roles:          PASS"
-echo "  Secrets (3):         PASS"
+echo "  Secrets (4):         PASS"
 echo "  Key (EncryptionKey): PASS"
 echo "  Certificate (AppCert): PASS"
-echo "  Backup:              PASS"
-echo "  Restore:             PASS"
+echo "  Backup Blobs:        PASS"
+echo "  Secondary Seeding:   PASS"
 echo "  Secrets Match:       $SECRETS_MATCH"
 echo "========================================="
 

@@ -8,9 +8,9 @@ echo "============================================"
 RANDOM_SUFFIX=$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 5)
 SB_PRIMARY="sb-dr-swc-${RANDOM_SUFFIX}"
 SB_SECONDARY="sb-dr-noe-${RANDOM_SUFFIX}"
-SB_ALIAS="sb-alias-multiregion"
-RG_PRIMARY="rg-servicebus-dr-primary"
-RG_SECONDARY="rg-servicebus-dr-secondary"
+SB_ALIAS="sb-alias-${RANDOM_SUFFIX}"
+RG_PRIMARY="rg-servicebus-dr-primary-${RANDOM_SUFFIX}"
+RG_SECONDARY="rg-servicebus-dr-secondary-${RANDOM_SUFFIX}"
 LOCATION_PRIMARY="swedencentral"
 LOCATION_SECONDARY="norwayeast"
 
@@ -115,6 +115,11 @@ for i in $(seq 1 30); do
   sleep 10
 done
 
+if [ "$STATE" != "Succeeded" ]; then
+  echo "  ERROR: Geo-DR alias provisioning did not succeed (last state: $STATE)" >&2
+  exit 1
+fi
+
 echo ""
 echo ">>> Step 9: Verifying metadata replicated to secondary..."
 echo "  === Queues on secondary ==="
@@ -143,18 +148,37 @@ az servicebus georecovery-alias fail-over \
   --resource-group "$RG_SECONDARY" \
   --namespace-name "$SB_SECONDARY" \
   --alias "$SB_ALIAS" \
-  -o none 2>&1 || echo "  WARN: failover command returned non-zero"
+  --is-safe-failover false \
+  -o none
 echo "  OK: failover initiated"
-
-sleep 15
 
 echo ""
 echo ">>> Step 12: Verifying alias points to secondary..."
-ROLE=$(az servicebus georecovery-alias show \
-  --resource-group "$RG_SECONDARY" \
-  --namespace-name "$SB_SECONDARY" \
-  --alias "$SB_ALIAS" \
-  --query "role" -o tsv 2>/dev/null || echo "unknown")
+FAILOVER_STATE="pending"
+ROLE="unknown"
+for i in $(seq 1 24); do
+  ROLE=$(az servicebus georecovery-alias show \
+    --resource-group "$RG_SECONDARY" \
+    --namespace-name "$SB_SECONDARY" \
+    --alias "$SB_ALIAS" \
+    --query "role" -o tsv 2>/dev/null || echo "unknown")
+  FAILOVER_STATE=$(az servicebus georecovery-alias show \
+    --resource-group "$RG_SECONDARY" \
+    --namespace-name "$SB_SECONDARY" \
+    --alias "$SB_ALIAS" \
+    --query "provisioningState" -o tsv 2>/dev/null || echo "pending")
+  echo "  Attempt $i: role=$ROLE state=$FAILOVER_STATE"
+  if [[ "$ROLE" == Primary* && "$FAILOVER_STATE" == "Succeeded" ]]; then
+    break
+  fi
+  sleep 10
+done
+
+if [[ "$ROLE" != Primary* || "$FAILOVER_STATE" != "Succeeded" ]]; then
+  echo "  ERROR: failover did not complete successfully (role=$ROLE state=$FAILOVER_STATE)" >&2
+  exit 1
+fi
+
 echo "  Secondary role after failover: $ROLE"
 
 echo ""
@@ -166,5 +190,5 @@ echo "  SB Namespaces:       PASS (Premium)"
 echo "  Queue + Topic:       PASS"
 echo "  Geo-DR Alias:        $STATE"
 echo "  Metadata Replicated: see above"
-echo "  Failover:            Role=$ROLE"
+echo "  Failover:            Role=$ROLE State=$FAILOVER_STATE"
 echo "========================================="

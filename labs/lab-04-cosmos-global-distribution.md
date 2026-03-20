@@ -332,7 +332,7 @@ In this lab you will:
 | Portal access | Needed for the portal path and Data Explorer |
 
 <div class="lab-note">
-<strong>Data-plane note:</strong> Current Azure CLI releases manage the Cosmos DB account, database, and container just fine, but they do not provide GA NoSQL item/query commands. For item creation and querying, this lab uses the supported Cosmos DB REST API in Bash and PowerShell, or <strong>Data Explorer</strong> in the Azure portal.
+<strong>Data-plane note:</strong> Current Azure CLI releases manage the Cosmos DB account, database, and container just fine, but they do not provide GA NoSQL item/query commands. For item creation and querying, this lab uses the supported Cosmos DB REST API in Bash and PowerShell, or <strong>Data Explorer</strong> in the Azure portal. If your account has <strong>Local Authorization</strong> disabled, the validation script falls back to Microsoft Entra ID plus Cosmos native RBAC instead of the key-based examples below.
 </div>
 
 ---
@@ -864,7 +864,7 @@ Get-AzCosmosDBSqlContainer `
 Retrieve the account endpoint and key, then create three sample order documents.
 
 <div class="lab-note">
-<strong>Security note:</strong> The Bash and PowerShell examples use the account primary key because it works everywhere and avoids extra RBAC setup for a lab. In production, prefer the SDK with Microsoft Entra ID and Cosmos DB RBAC instead of distributing account keys.
+<strong>Security note:</strong> The Bash and PowerShell examples use the account primary key for the simplest lab flow. In production, prefer the SDK with Microsoft Entra ID and Cosmos DB RBAC instead of distributing account keys. If your subscription disables <strong>Local Authorization</strong>, switch to an Entra access token for <code>https://cosmos.azure.com/</code> and grant the current user the <strong>Cosmos DB Built-in Data Contributor</strong> role.
 </div>
 
 <div class="lab-tabs">
@@ -1162,7 +1162,7 @@ Run a cross-partition query and then a single-partition query.
 
 ```bash
 show_cosmos_orders() {
-  local query_body='{"query":"SELECT c.id, c.customerId, c.product, c.status FROM c ORDER BY c.createdAt","parameters":[]}'
+  local query_body='{"query":"SELECT c.id, c.customerId, c.product, c.status FROM c","parameters":[]}'
   local response
 
   response="$(cosmos_request "POST" "docs" "$COSMOS_DOCS_RESOURCE_LINK" "$COSMOS_DOCS_PATH" "application/query+json" \
@@ -1176,7 +1176,7 @@ import json
 import sys
 
 data = json.loads(sys.argv[1])
-docs = data.get("Documents", [])
+docs = sorted(data.get("Documents", []), key=lambda doc: doc.get("id", ""))
 print(f"{'Id':<12} {'CustomerId':<14} {'Product':<36} Status")
 print(f"{'-' * 12} {'-' * 14} {'-' * 36} {'-' * 10}")
 for doc in docs:
@@ -1224,7 +1224,7 @@ show_customer_orders "customer-100"
 ```powershell
 function Show-CosmosOrders {
   $queryBody = @{
-    query = "SELECT c.id, c.customerId, c.product, c.status FROM c ORDER BY c.createdAt"
+    query = "SELECT c.id, c.customerId, c.product, c.status FROM c"
     parameters = @()
   } | ConvertTo-Json -Depth 5 -Compress
 
@@ -1241,7 +1241,7 @@ function Show-CosmosOrders {
       "x-ms-max-item-count" = "-1"
     }
 
-  $response.Documents | Select-Object id, customerId, product, status | Format-Table -AutoSize
+  $response.Documents | Sort-Object id | Select-Object id, customerId, product, status | Format-Table -AutoSize
   Write-Host "Count: $($response._count)"
 }
 
@@ -1286,7 +1286,7 @@ Show-CosmosOrdersForCustomer -CustomerId "customer-100"
 2. Run this cross-partition query:
 
 ```sql
-SELECT c.id, c.customerId, c.product, c.status FROM c ORDER BY c.createdAt
+SELECT c.id, c.customerId, c.product, c.status FROM c
 ```
 
 3. Then run this single-partition query:

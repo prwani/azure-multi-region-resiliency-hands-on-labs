@@ -98,9 +98,9 @@ az network traffic-manager profile create \
   --resource-group "$PRIMARY_RG" \
   --routing-method Priority \
   --unique-dns-name "$TM_DNS_NAME" \
-  --monitor-protocol HTTPS \
-  --monitor-port 443 \
-  --monitor-path "/" \
+  --protocol HTTPS \
+  --port 443 \
+  --path "/" \
   --ttl 30 \
   -o none
 echo "  OK: $TM_DNS_NAME.trafficmanager.net"

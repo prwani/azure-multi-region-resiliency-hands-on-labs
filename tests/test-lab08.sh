@@ -7,7 +7,7 @@ echo "============================================"
 
 RANDOM_SUFFIX=$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 5)
 ACR_NAME="acrmultiregion${RANDOM_SUFFIX}"
-RG="rg-acr-georeplication-lab"
+RG="rg-acr-georeplication-${RANDOM_SUFFIX}"
 HOME_REGION="swedencentral"
 REPLICA_REGION="norwayeast"
 

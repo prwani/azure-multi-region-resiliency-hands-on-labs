@@ -7,47 +7,266 @@ title: "Lab 6: Azure Service Bus – Geo-Disaster Recovery"
 
 # Lab 6: Azure Service Bus – Geo-Disaster Recovery
 
+<script>
+document.documentElement.classList.add("lab-tabs-js");
+
+document.addEventListener("DOMContentLoaded", () => {
+  const storageKey = "azure-labs-preferred-tab";
+  const validTabs = ["bash", "powershell", "portal"];
+  const tabGroups = Array.from(document.querySelectorAll(".lab-tabs"));
+  const copyIcon = `
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M5.75 1A1.75 1.75 0 0 0 4 2.75v6.5C4 10.216 4.784 11 5.75 11h5.5A1.75 1.75 0 0 0 13 9.25v-6.5A1.75 1.75 0 0 0 11.25 1h-5.5Zm-.25 1.75c0-.138.112-.25.25-.25h5.5c.138 0 .25.112.25.25v6.5a.25.25 0 0 1-.25.25h-5.5a.25.25 0 0 1-.25-.25v-6.5Z"></path>
+      <path d="M2.75 5A1.75 1.75 0 0 0 1 6.75v6.5C1 14.216 1.784 15 2.75 15h5.5A1.75 1.75 0 0 0 10 13.25V12H8.5v1.25a.25.25 0 0 1-.25.25h-5.5a.25.25 0 0 1-.25-.25v-6.5c0-.138.112-.25.25-.25H4V5H2.75Z"></path>
+    </svg>
+  `;
+  const copiedIcon = `
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 1 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path>
+    </svg>
+  `;
+
+  function setActiveTab(tabName) {
+    const selectedTab = validTabs.includes(tabName) ? tabName : "bash";
+
+    tabGroups.forEach((group) => {
+      const buttons = group.querySelectorAll(".lab-tabs__button");
+      const panels = group.querySelectorAll(".lab-tabs__panel");
+
+      buttons.forEach((button) => {
+        const isActive = button.dataset.tab === selectedTab;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+        button.tabIndex = isActive ? 0 : -1;
+      });
+
+      panels.forEach((panel) => {
+        const isActive = panel.dataset.tabPanel === selectedTab;
+        panel.classList.toggle("is-active", isActive);
+        panel.hidden = !isActive;
+      });
+    });
+
+    try {
+      localStorage.setItem(storageKey, selectedTab);
+    } catch (error) {
+      console.warn("Could not persist tab preference", error);
+    }
+  }
+
+  tabGroups.forEach((group) => {
+    group.querySelectorAll(".lab-tabs__button").forEach((button) => {
+      button.type = "button";
+      button.setAttribute("role", "tab");
+      button.addEventListener("click", () => setActiveTab(button.dataset.tab));
+    });
+
+    group.querySelectorAll(".lab-tabs__panel").forEach((panel) => {
+      panel.setAttribute("role", "tabpanel");
+    });
+  });
+
+  let preferredTab = "bash";
+  try {
+    const storedTab = localStorage.getItem(storageKey);
+    if (validTabs.includes(storedTab)) {
+      preferredTab = storedTab;
+    }
+  } catch (error) {
+    console.warn("Could not read saved tab preference", error);
+  }
+  setActiveTab(preferredTab);
+
+  const copyTargets = Array.from(
+    document.querySelectorAll("div.highlighter-rouge, pre:not(.highlight)")
+  );
+
+  copyTargets.forEach((target) => {
+    if (target.dataset.copyReady === "true") {
+      return;
+    }
+
+    const codeElement = target.querySelector("code");
+    if (!codeElement || !codeElement.innerText.trim()) {
+      return;
+    }
+
+    target.dataset.copyReady = "true";
+    target.classList.add("lab-copyable");
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "lab-copy-button";
+    button.setAttribute("aria-label", "Copy code");
+    button.innerHTML = copyIcon;
+
+    button.addEventListener("click", async () => {
+      const text = codeElement.innerText.replace(/\s+$/, "");
+
+      try {
+        await navigator.clipboard.writeText(text);
+        button.classList.add("is-copied");
+        button.innerHTML = copiedIcon;
+        button.setAttribute("aria-label", "Copied");
+        window.setTimeout(() => {
+          button.classList.remove("is-copied");
+          button.innerHTML = copyIcon;
+          button.setAttribute("aria-label", "Copy code");
+        }, 1500);
+      } catch (error) {
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(codeElement);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+
+    target.appendChild(button);
+  });
+});
+</script>
+
+<style>
+.lab-tabs {
+  margin: 1rem 0 1.5rem;
+  border: 1px solid #d0d7de;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.lab-tabs__list {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border-bottom: 1px solid #d0d7de;
+  background: #f6f8fa;
+  overflow-x: auto;
+}
+
+.lab-tabs__button {
+  padding: 0.55rem 0.95rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #57606a;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.lab-tabs__button:hover {
+  background: rgba(9, 105, 218, 0.08);
+  color: #0969da;
+}
+
+.lab-tabs__button.is-active {
+  background: #ffffff;
+  color: #0969da;
+  box-shadow: inset 0 0 0 1px rgba(9, 105, 218, 0.16);
+}
+
+.lab-tabs__panel {
+  padding: 1rem 1rem 0.25rem;
+}
+
+.lab-tabs__panel > :first-child {
+  margin-top: 0;
+}
+
+html.lab-tabs-js .lab-tabs__panel {
+  display: none;
+}
+
+html.lab-tabs-js .lab-tabs__panel.is-active {
+  display: block;
+}
+
+.lab-note {
+  padding: 0.9rem 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid #0969da;
+  background: #eff6ff;
+  border-radius: 8px;
+}
+
+.lab-copyable {
+  position: relative;
+}
+
+.lab-copy-button {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(27, 31, 36, 0.15);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #57606a;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.lab-copy-button:hover {
+  background: #ffffff;
+  color: #0969da;
+}
+
+.lab-copy-button.is-copied {
+  color: #1a7f37;
+}
+
+.lab-copy-button svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.lab-copyable pre {
+  padding-top: 2.6rem;
+}
+
+@media (max-width: 767px) {
+  .lab-tabs__panel {
+    padding: 0.9rem 0.8rem 0.2rem;
+  }
+}
+</style>
+
 ## Introduction
 
-Azure Service Bus is a fully managed enterprise message broker that supports
-queues, topics, and subscriptions. A Service Bus **namespace** lives in a single
-Azure region. Unlike some other Azure services, Service Bus does **not**
-automatically replicate messages across regions. If the region hosting your
-namespace suffers an outage, your messaging infrastructure — and any in-flight
-messages — become unavailable.
+Azure Service Bus is a fully managed enterprise message broker that supports queues, topics, and subscriptions. A Service Bus **namespace** still lives in one Azure region, so a regional outage can take your namespace offline.
 
-**Geo-Disaster Recovery (Geo-DR)** addresses the *namespace continuity* problem.
-It continuously replicates **metadata** (queues, topics, subscriptions, filters,
-authorization rules) from a **primary** namespace to a **secondary** namespace in
-a different region. A DNS alias abstracts the two namespaces behind a single
-fully-qualified domain name (FQDN). When you initiate a failover, the alias
-swings to the secondary namespace and your producers and consumers reconnect
-transparently — no connection-string changes required.
+**Geo-Disaster Recovery (Geo-DR)** solves the *namespace continuity* problem by replicating **metadata** from a primary namespace to a secondary namespace and exposing both through a single DNS alias. When you fail over, clients that use the alias reconnect to the secondary without changing connection strings.
 
 ### What Geo-DR Is — and What It Is Not
 
-| Replicated (metadata)                | **Not** replicated                      |
-|--------------------------------------|-----------------------------------------|
-| Queue definitions                    | Messages in queues / topics             |
-| Topic definitions                    | Dead-letter queue contents              |
-| Subscription definitions             | Message state (deferred, scheduled)     |
-| Subscription filters / actions       | Sequence numbers                        |
-| SAS policies and keys                | Active sessions                         |
-| RBAC role assignments (ARM level)    | Per-message locks                       |
+| Replicated (metadata) | Not replicated |
+|---|---|
+| Queue definitions | Messages in queues and topics |
+| Topic and subscription definitions | Dead-letter contents |
+| Subscription rules and filters | Deferred, scheduled, or locked message state |
+| SAS policies and keys | Sequence numbers and active sessions |
+| Geo-DR alias metadata | Per-message runtime state |
 
-> **Key takeaway:** Geo-DR is about *namespace continuity and connection-string
-> stability*, **not** about message replication. If you need zero-message-loss
-> across regions, you must implement application-level forwarding (see the
-> Discussion section at the end of this lab).
+> **Key takeaway:** Geo-DR protects the namespace contract and endpoint stability. It does **not** copy queued messages into the secondary namespace.
 
 ---
 
 ## Architecture
 
-```
+```text
                         ┌──────────────────────────────┐
                         │       Geo-DR Alias           │
-                        │  sb-alias-multiregion        │
+                        │  sb-alias-multiregion       │
                         │  .servicebus.windows.net     │
                         └──────────┬───────────────────┘
                                    │
@@ -59,7 +278,7 @@ transparently — no connection-string changes required.
               ▼                                         ▼
 ┌───────────────────────────┐          ┌───────────────────────────┐
 │    Primary Namespace      │          │   Secondary Namespace     │
-│    sb-dr-swc-xxxxx        │  ──────► │   sb-dr-noe-xxxxx        │
+│    sb-dr-swc-xxxxx        │  ──────► │   sb-dr-noe-xxxxx         │
 │    Sweden Central         │ metadata │   Norway East             │
 │                           │   sync   │                           │
 │  ┌─────────────────────┐  │          │  ┌─────────────────────┐  │
@@ -70,60 +289,118 @@ transparently — no connection-string changes required.
 └───────────────────────────┘          └───────────────────────────┘
               ▲                                         ▲
               │                                         │
-     ┌────────┴────────┐                       (after failover,
-     │   Producers &   │                        alias swings here)
-     │   Consumers     │
-     │  (connect via   │
-     │   alias FQDN)   │
+     ┌────────┴────────┐                     (after failover,
+     │ Producers and   │                      alias swings here)
+     │ Consumers use   │
+     │ alias FQDN      │
      └─────────────────┘
 ```
 
-**Normal operation:** The alias FQDN resolves to the primary namespace. All
-messages flow through Sweden Central. Metadata is continuously synchronised to
-the secondary in Norway East.
+**Normal operation:** The alias resolves to Sweden Central and metadata is continuously synchronised to Norway East.
 
-**During failover:** You invoke `fail-over` on the secondary. The alias DNS
-record swings to Norway East. Producers and consumers reconnect (most SDKs
-retry automatically) and resume operations against the secondary. Any messages
-that were in-flight in the primary are **lost**.
+**After failover:** The alias swings to Norway East, the former primary is detached, and any messages that existed only in the original primary remain there.
 
 ---
 
 ## Prerequisites
 
-| Requirement             | Details                                                    |
-|-------------------------|------------------------------------------------------------|
-| **Azure subscription**  | With permissions to create Service Bus Premium namespaces   |
-| **Azure CLI ≥ 2.55**    | `az --version` — install or update via `az upgrade`        |
-| **Service Bus Premium** | ⚠️ **Both namespaces must be Premium tier** (see cost note) |
-| **Bash shell**          | Azure Cloud Shell, WSL, macOS Terminal, or Git Bash        |
+| Requirement | Details |
+|---|---|
+| **Azure subscription** | Permission to create **Premium** Service Bus namespaces |
+| **Azure CLI ≥ 2.55** | `az --version` |
+| **Python 3.10+** *(recommended)* | Used for the data-plane send/receive checks in the shell tabs |
+| **PowerShell 7+** *(optional)* | Needed only if you follow the PowerShell path |
+| **Service Bus Premium** | Both namespaces must use **Premium** tier |
 
-> ⚠️ **Cost warning:** Service Bus Premium is billed per Messaging Unit per hour.
-> Two Premium namespaces with 1 MU each will incur significant cost. **Delete
-> resources promptly** after completing the lab to minimise charges.
+> **Cost warning:** Premium Service Bus is billed per Messaging Unit per hour. Delete these resources as soon as you complete the lab.
+
+---
+
+## How These Tabs Work
+
+This page uses the same interaction pattern as Lab 1:
+
+- Pick **Bash**, **PowerShell**, or **Portal** once and the rest of the page follows that choice.
+- Only one instruction path is visible at a time.
+- Your tab selection is remembered in the browser.
+- Every code block keeps the same copy-button behaviour used in Lab 1.
+
+
+
+---
+
+## Sign In and Select the Subscription
+
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
+az login
+az account list -o table
+az account set --subscription "<YOUR_SUBSCRIPTION_NAME_OR_ID>"
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az login
+az account list -o table
+az account set --subscription "<YOUR_SUBSCRIPTION_NAME_OR_ID>"
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the [Azure portal](https://portal.azure.com).
+2. Switch to the correct tenant or directory if needed.
+3. Open **Subscriptions** and confirm the subscription that will host both regions.
+4. Keep the portal open — you will reuse it throughout the lab.
+
+  </div>
+</div>
+
+
+
+<div class="lab-note">
+<strong>Tip:</strong> Geo-DR pairs only two namespaces at a time. Keep their names, regions, and the alias recorded together so the failover story stays easy to follow.
+</div>
+
+
 
 ---
 
 ## Step 1 — Set Variables
 
-Generate a short random suffix to ensure globally unique namespace names.
+Create a consistent naming pattern before you provision the namespaces.
 
-```azurecli
-# Random 5-character suffix
-RANDOM_SUFFIX=$(head /dev/urandom | tr -dc 'a-z0-9' | head -c 5)
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-# Namespace names
-SB_PRIMARY="sb-dr-swc-${RANDOM_SUFFIX}"
-SB_SECONDARY="sb-dr-noe-${RANDOM_SUFFIX}"
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
-# Geo-DR alias
+```bash
+RANDOM_SUFFIX=$(tr -dc 'a-z0-9' </dev/urandom | head -c 5)
+
+SB_PRIMARY="sb-dr-swc-$RANDOM_SUFFIX"
+SB_SECONDARY="sb-dr-noe-$RANDOM_SUFFIX"
 SB_ALIAS="sb-alias-multiregion"
 
-# Resource groups
 RG_PRIMARY="rg-servicebus-dr-primary"
 RG_SECONDARY="rg-servicebus-dr-secondary"
 
-# Regions
 LOCATION_PRIMARY="swedencentral"
 LOCATION_SECONDARY="norwayeast"
 
@@ -132,547 +409,1384 @@ echo "Secondary namespace: $SB_SECONDARY"
 echo "Alias              : $SB_ALIAS"
 ```
 
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+$RANDOM_SUFFIX = -join ((48..57 + 97..122) | Get-Random -Count 5 | ForEach-Object { [char]$_ })
+
+$SB_PRIMARY = "sb-dr-swc-$RANDOM_SUFFIX"
+$SB_SECONDARY = "sb-dr-noe-$RANDOM_SUFFIX"
+$SB_ALIAS = "sb-alias-multiregion"
+
+$RG_PRIMARY = "rg-servicebus-dr-primary"
+$RG_SECONDARY = "rg-servicebus-dr-secondary"
+
+$LOCATION_PRIMARY = "swedencentral"
+$LOCATION_SECONDARY = "norwayeast"
+
+Write-Host "Primary namespace : $SB_PRIMARY"
+Write-Host "Secondary namespace: $SB_SECONDARY"
+Write-Host "Alias              : $SB_ALIAS"
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+Write down these values before you start:
+
+1. Primary region: `swedencentral`
+2. Secondary region: `norwayeast`
+3. Primary namespace: `sb-dr-swc-<suffix>`
+4. Secondary namespace: `sb-dr-noe-<suffix>`
+5. Geo-DR alias: `sb-alias-multiregion`
+
+  </div>
+</div>
+
+
+
 ---
 
 ## Step 2 — Create Resource Groups
 
-```azurecli
-az group create \
-  --name $RG_PRIMARY \
-  --location $LOCATION_PRIMARY \
-  --output table
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-az group create \
-  --name $RG_SECONDARY \
-  --location $LOCATION_SECONDARY \
-  --output table
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
+az group create --name "$RG_PRIMARY" --location "$LOCATION_PRIMARY" --output table
+az group create --name "$RG_SECONDARY" --location "$LOCATION_SECONDARY" --output table
 ```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az group create --name $RG_PRIMARY --location $LOCATION_PRIMARY --output table
+az group create --name $RG_SECONDARY --location $LOCATION_SECONDARY --output table
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open **Resource groups**.
+2. Create `rg-servicebus-dr-primary` in **Sweden Central**.
+3. Create `rg-servicebus-dr-secondary` in **Norway East**.
+
+  </div>
+</div>
+
+
 
 ---
 
 ## Step 3 — Create the Primary Service Bus Namespace (Premium)
 
-Geo-DR requires the **Premium** SKU. We provision 1 Messaging Unit (the
-minimum).
+Geo-DR requires the Premium SKU, so both namespaces must be created the same way.
 
-```azurecli
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 az servicebus namespace create \
-  --name $SB_PRIMARY \
-  --resource-group $RG_PRIMARY \
-  --location $LOCATION_PRIMARY \
+  --name "$SB_PRIMARY" \
+  --resource-group "$RG_PRIMARY" \
+  --location "$LOCATION_PRIMARY" \
   --sku Premium \
   --capacity 1 \
   --output table
 ```
 
-This operation takes 2–4 minutes. Premium namespaces run on dedicated
-infrastructure.
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az servicebus namespace create `
+  --name $SB_PRIMARY `
+  --resource-group $RG_PRIMARY `
+  --location $LOCATION_PRIMARY `
+  --sku Premium `
+  --capacity 1 `
+  --output table
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open **Service Bus namespaces** → **Create**.
+2. Use resource group `rg-servicebus-dr-primary`.
+3. Name the namespace `sb-dr-swc-<suffix>`.
+4. Choose region **Sweden Central**.
+5. Select the **Premium** pricing tier with **1 Messaging Unit**.
+6. Review and create the namespace.
+
+  </div>
+</div>
+
+
+
+<div class="lab-note">
+<strong>Provisioning note:</strong> Premium namespaces take longer than Standard because they allocate dedicated capacity.
+</div>
+
+
 
 ---
 
 ## Step 4 — Create the Secondary Service Bus Namespace (Premium)
 
-```azurecli
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 az servicebus namespace create \
-  --name $SB_SECONDARY \
-  --resource-group $RG_SECONDARY \
-  --location $LOCATION_SECONDARY \
+  --name "$SB_SECONDARY" \
+  --resource-group "$RG_SECONDARY" \
+  --location "$LOCATION_SECONDARY" \
   --sku Premium \
   --capacity 1 \
   --output table
 ```
 
-> ⚠️ **Both namespaces must be Premium.** Standard or Basic namespaces cannot
-> participate in Geo-DR pairings.
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az servicebus namespace create `
+  --name $SB_SECONDARY `
+  --resource-group $RG_SECONDARY `
+  --location $LOCATION_SECONDARY `
+  --sku Premium `
+  --capacity 1 `
+  --output table
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Create the second namespace in **Norway East**.
+2. Use the same **Premium** tier and **1 Messaging Unit**.
+3. Keep the namespace empty — do not create entities in the secondary before pairing.
+
+  </div>
+</div>
+
+
 
 ---
 
 ## Step 5 — Create a Test Queue in the Primary Namespace
 
-```azurecli
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 az servicebus queue create \
-  --namespace-name $SB_PRIMARY \
-  --resource-group $RG_PRIMARY \
+  --namespace-name "$SB_PRIMARY" \
+  --resource-group "$RG_PRIMARY" \
   --name orders-queue \
   --max-size 1024 \
   --output table
-```
 
-Confirm the queue exists:
-
-```azurecli
 az servicebus queue list \
-  --namespace-name $SB_PRIMARY \
-  --resource-group $RG_PRIMARY \
+  --namespace-name "$SB_PRIMARY" \
+  --resource-group "$RG_PRIMARY" \
   --query "[].name" \
   --output tsv
 ```
 
-Expected output:
+  </div>
 
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az servicebus queue create `
+  --namespace-name $SB_PRIMARY `
+  --resource-group $RG_PRIMARY `
+  --name orders-queue `
+  --max-size 1024 `
+  --output table
+
+az servicebus queue list `
+  --namespace-name $SB_PRIMARY `
+  --resource-group $RG_PRIMARY `
+  --query "[].name" `
+  --output tsv
 ```
-orders-queue
-```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the **primary** Service Bus namespace.
+2. Select **Queues** → **+ Queue**.
+3. Name it `orders-queue`.
+4. Leave the defaults unless you want to match the 1 GB max size used in the shell examples.
+
+  </div>
+</div>
+
+
 
 ---
 
 ## Step 6 — Create a Test Topic and Subscription
 
-```azurecli
-# Create the topic
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 az servicebus topic create \
-  --namespace-name $SB_PRIMARY \
-  --resource-group $RG_PRIMARY \
+  --namespace-name "$SB_PRIMARY" \
+  --resource-group "$RG_PRIMARY" \
   --name events-topic \
   --max-size 1024 \
   --output table
 
-# Create a subscription on the topic
 az servicebus topic subscription create \
-  --namespace-name $SB_PRIMARY \
-  --resource-group $RG_PRIMARY \
+  --namespace-name "$SB_PRIMARY" \
+  --resource-group "$RG_PRIMARY" \
   --topic-name events-topic \
   --name all-events-sub \
   --output table
 ```
 
-Verify:
+  </div>
 
-```azurecli
-az servicebus topic list \
-  --namespace-name $SB_PRIMARY \
-  --resource-group $RG_PRIMARY \
-  --query "[].name" \
-  --output tsv
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az servicebus topic create `
+  --namespace-name $SB_PRIMARY `
+  --resource-group $RG_PRIMARY `
+  --name events-topic `
+  --max-size 1024 `
+  --output table
+
+az servicebus topic subscription create `
+  --namespace-name $SB_PRIMARY `
+  --resource-group $RG_PRIMARY `
+  --topic-name events-topic `
+  --name all-events-sub `
+  --output table
 ```
 
-Expected output:
+  </div>
 
-```
-events-topic
-```
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. In the primary namespace, open **Topics** → **+ Topic**.
+2. Create `events-topic`.
+3. Open the topic, select **Subscriptions** → **+ Subscription**.
+4. Create `all-events-sub`.
+
+  </div>
+</div>
+
+
 
 ---
 
 ## Step 7 — Retrieve the Secondary Namespace Resource ID
 
-The Geo-DR pairing command requires the **full ARM resource ID** of the
-secondary namespace.
+The pairing command needs the full Azure Resource Manager ID of the partner namespace.
 
-```azurecli
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 SECONDARY_ID=$(az servicebus namespace show \
-  --name $SB_SECONDARY \
-  --resource-group $RG_SECONDARY \
+  --name "$SB_SECONDARY" \
+  --resource-group "$RG_SECONDARY" \
   --query id \
   --output tsv)
 
-echo "Secondary resource ID: $SECONDARY_ID"
+echo "$SECONDARY_ID"
 ```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+$SECONDARY_ID = az servicebus namespace show `
+  --name $SB_SECONDARY `
+  --resource-group $RG_SECONDARY `
+  --query id `
+  --output tsv
+
+Write-Host $SECONDARY_ID
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the **secondary** Service Bus namespace.
+2. On **Overview**, locate **Resource ID** (or use **JSON View** if your portal layout differs).
+3. Copy that full resource ID — you need it for the Geo-DR pairing step.
+
+  </div>
+</div>
+
+
 
 ---
 
 ## Step 8 — Create the Geo-DR Alias (Pairing)
 
-This is the core step. It links the two namespaces under a single alias and
-begins continuous metadata synchronisation.
+This is the control-plane step that ties both namespaces together and starts metadata replication.
 
-```azurecli
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 az servicebus georecovery-alias create \
-  --resource-group $RG_PRIMARY \
-  --namespace-name $SB_PRIMARY \
-  --alias $SB_ALIAS \
-  --partner-namespace $SECONDARY_ID \
+  --resource-group "$RG_PRIMARY" \
+  --namespace-name "$SB_PRIMARY" \
+  --alias "$SB_ALIAS" \
+  --partner-namespace "$SECONDARY_ID" \
   --output table
 ```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az servicebus georecovery-alias create `
+  --resource-group $RG_PRIMARY `
+  --namespace-name $SB_PRIMARY `
+  --alias $SB_ALIAS `
+  --partner-namespace $SECONDARY_ID `
+  --output table
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the **primary** namespace.
+2. Select **Geo recovery**.
+3. Choose **Pair namespaces**.
+4. Enter alias `sb-alias-multiregion`.
+5. Select the Norway East namespace as the secondary partner.
+6. Confirm the pairing.
+
+  </div>
+</div>
+
+
 
 ---
 
 ## Step 9 — Wait for Provisioning to Complete
 
-The pairing takes 1–3 minutes to fully provision. Poll until `provisioningState`
-is `Succeeded` and `role` is `Primary`.
+Do not continue until the alias reports a healthy, successful state.
 
-```azurecli
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 while true; do
   STATE=$(az servicebus georecovery-alias show \
-    --resource-group $RG_PRIMARY \
-    --namespace-name $SB_PRIMARY \
-    --alias $SB_ALIAS \
-    --query "provisioningState" \
-    --output tsv)
+  --resource-group "$RG_PRIMARY" \
+  --namespace-name "$SB_PRIMARY" \
+  --alias "$SB_ALIAS" \
+  --query provisioningState \
+  --output tsv)
 
   ROLE=$(az servicebus georecovery-alias show \
-    --resource-group $RG_PRIMARY \
-    --namespace-name $SB_PRIMARY \
-    --alias $SB_ALIAS \
-    --query "role" \
-    --output tsv)
+  --resource-group "$RG_PRIMARY" \
+  --namespace-name "$SB_PRIMARY" \
+  --alias "$SB_ALIAS" \
+  --query role \
+  --output tsv)
 
   echo "State: $STATE | Role: $ROLE"
-
-  if [ "$STATE" == "Succeeded" ]; then
-    echo "Geo-DR pairing is ready."
-    break
-  fi
-
+  [ "$STATE" = "Succeeded" ] && break
   sleep 10
 done
-```
 
-Once `Succeeded`, inspect the full alias configuration:
-
-```azurecli
 az servicebus georecovery-alias show \
-  --resource-group $RG_PRIMARY \
-  --namespace-name $SB_PRIMARY \
-  --alias $SB_ALIAS \
-  --output json
+  --resource-group "$RG_PRIMARY" \
+  --namespace-name "$SB_PRIMARY" \
+  --alias "$SB_ALIAS" \
+  --output table
 ```
 
-Note the key fields in the output:
+  </div>
 
-| Field                  | Expected Value                                        |
-|------------------------|-------------------------------------------------------|
-| `provisioningState`    | `Succeeded`                                           |
-| `role`                 | `Primary`                                             |
-| `partnerNamespace`     | Full resource ID of the secondary namespace           |
-| `pendingReplicationOperationsCount` | `0` (once sync is complete)              |
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+do {
+    $STATE = az servicebus georecovery-alias show `
+      --resource-group $RG_PRIMARY `
+      --namespace-name $SB_PRIMARY `
+      --alias $SB_ALIAS `
+      --query provisioningState `
+      --output tsv
+
+    $ROLE = az servicebus georecovery-alias show `
+      --resource-group $RG_PRIMARY `
+      --namespace-name $SB_PRIMARY `
+      --alias $SB_ALIAS `
+      --query role `
+      --output tsv
+
+    Write-Host "State: $STATE | Role: $ROLE"
+    if ($STATE -ne "Succeeded") { Start-Sleep -Seconds 10 }
+} while ($STATE -ne "Succeeded")
+
+az servicebus georecovery-alias show `
+  --resource-group $RG_PRIMARY `
+  --namespace-name $SB_PRIMARY `
+  --alias $SB_ALIAS `
+  --output table
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Stay on the **Geo recovery** blade of the primary namespace.
+2. Refresh until the alias shows:
+   - Provisioning state: **Succeeded**
+   - Role: **Primary**
+3. Confirm the secondary partner is listed and healthy.
+
+  </div>
+</div>
+
+
 
 ---
 
-## Step 10 — Confirm the Alias FQDN
+## Step 10 — Confirm the Alias FQDN and Alias Connection String
 
-After pairing, producers and consumers should connect using the **alias** FQDN
-instead of the primary or secondary namespace FQDNs:
+Applications should connect through the alias endpoint rather than the regional namespace names.
 
-```
-Alias FQDN:     sb-alias-multiregion.servicebus.windows.net
-Primary FQDN:   sb-dr-swc-xxxxx.servicebus.windows.net   (do NOT use directly)
-Secondary FQDN: sb-dr-noe-xxxxx.servicebus.windows.net   (do NOT use directly)
-```
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-Print the alias FQDN:
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
-```azurecli
-echo "Alias FQDN: ${SB_ALIAS}.servicebus.windows.net"
-```
+```bash
+echo "Alias FQDN: $SB_ALIAS.servicebus.windows.net"
 
-Retrieve the alias connection string (uses the primary's SAS keys):
-
-```azurecli
-az servicebus georecovery-alias authorization-rule keys list \
-  --resource-group $RG_PRIMARY \
-  --namespace-name $SB_PRIMARY \
-  --alias $SB_ALIAS \
+SB_ALIAS_CONNECTION_STRING=$(az servicebus georecovery-alias authorization-rule keys list \
+  --resource-group "$RG_PRIMARY" \
+  --namespace-name "$SB_PRIMARY" \
+  --alias "$SB_ALIAS" \
   --name RootManageSharedAccessKey \
-  --query "primaryConnectionString" \
-  --output tsv
+  --query aliasPrimaryConnectionString \
+  --output tsv)
+
+echo "$SB_ALIAS_CONNECTION_STRING"
 ```
 
-> The connection string's `Endpoint=` value uses the alias FQDN, so your
-> applications don't need to change connection strings after a failover.
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+Write-Host "Alias FQDN: $SB_ALIAS.servicebus.windows.net"
+
+$SB_ALIAS_CONNECTION_STRING = az servicebus georecovery-alias authorization-rule keys list `
+  --resource-group $RG_PRIMARY `
+  --namespace-name $SB_PRIMARY `
+  --alias $SB_ALIAS `
+  --name RootManageSharedAccessKey `
+  --query aliasPrimaryConnectionString `
+  --output tsv
+
+Write-Host $SB_ALIAS_CONNECTION_STRING
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. On the **Geo recovery** blade, note the alias name `sb-alias-multiregion`.
+2. Treat the effective endpoint as `sb-alias-multiregion.servicebus.windows.net`.
+3. If you want the exact alias connection string, open **Cloud Shell** and run the Bash or PowerShell command from this step. Portal layouts do not always expose the alias key view directly.
+
+  </div>
+</div>
+
+
+
+<div class="lab-note">
+<strong>Application guidance:</strong> Store the alias connection string in your app configuration. That is the whole point of Geo-DR — the endpoint stays stable even when the active namespace changes.
+</div>
+
+
+
+<div class="lab-note">
+<strong>If local auth is disabled:</strong> Some subscriptions enforce <code>disableLocalAuth=true</code> on Service Bus namespaces. In that case the SAS connection-string examples in Steps 12-18 fail with authentication errors. Assign yourself <code>Azure Service Bus Data Owner</code> on both namespaces and use <code>AzureCliCredential</code> or <code>DefaultAzureCredential</code> with the alias FQDN instead.
+</div>
+
+
 
 ---
 
 ## Step 11 — Verify Metadata Was Replicated to the Secondary
 
-Check that the queue and topic created on the primary also appear on the
-secondary namespace. This confirms metadata sync is working.
+The queue, topic, and subscription should appear in Norway East without you creating them there manually.
 
-```azurecli
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 echo "=== Queues on secondary ==="
 az servicebus queue list \
-  --namespace-name $SB_SECONDARY \
-  --resource-group $RG_SECONDARY \
+  --namespace-name "$SB_SECONDARY" \
+  --resource-group "$RG_SECONDARY" \
   --query "[].name" \
   --output tsv
 
-echo ""
+echo
 echo "=== Topics on secondary ==="
 az servicebus topic list \
-  --namespace-name $SB_SECONDARY \
-  --resource-group $RG_SECONDARY \
+  --namespace-name "$SB_SECONDARY" \
+  --resource-group "$RG_SECONDARY" \
   --query "[].name" \
   --output tsv
 ```
 
-Expected output:
+  </div>
 
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+Write-Host "=== Queues on secondary ==="
+az servicebus queue list `
+  --namespace-name $SB_SECONDARY `
+  --resource-group $RG_SECONDARY `
+  --query "[].name" `
+  --output tsv
+
+Write-Host ""
+Write-Host "=== Topics on secondary ==="
+az servicebus topic list `
+  --namespace-name $SB_SECONDARY `
+  --resource-group $RG_SECONDARY `
+  --query "[].name" `
+  --output tsv
 ```
-=== Queues on secondary ===
-orders-queue
 
-=== Topics on secondary ===
-events-topic
-```
+  </div>
 
-> If the entities don't appear yet, wait a minute and retry. Metadata sync may
-> still be in progress even after `provisioningState` shows `Succeeded`.
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the **secondary** namespace.
+2. Check **Queues** — `orders-queue` should be present.
+3. Check **Topics** — `events-topic` should be present.
+4. Open `events-topic` → **Subscriptions** and confirm `all-events-sub` exists.
+
+  </div>
+</div>
+
+
 
 ---
 
-## Step 12 — Send Test Messages via the Alias
+## Step 12 — Send Test Messages Using the Alias Connection String
 
-Now let's send messages **through the alias** to verify end-to-end connectivity.
+Azure CLI is great for the control plane, but it does not send queue messages directly. For the data-plane check, use a tiny SDK helper that connects with the alias connection string from Step 10.
 
-### Option A: Azure CLI
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-```azurecli
-# Send a message to the queue via the alias namespace
-az servicebus queue send \
-  --namespace-name $SB_ALIAS \
-  --resource-group $RG_PRIMARY \
-  --queue-name orders-queue \
-  --body '{"orderId": "ORD-001", "item": "Widget", "qty": 5}' \
-  --output table
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
-az servicebus queue send \
-  --namespace-name $SB_ALIAS \
-  --resource-group $RG_PRIMARY \
-  --queue-name orders-queue \
-  --body '{"orderId": "ORD-002", "item": "Gadget", "qty": 3}' \
-  --output table
+```bash
+python -m pip install --quiet azure-servicebus
 
-echo "Sent 2 messages to orders-queue via alias."
+if [ -z "$SB_ALIAS_CONNECTION_STRING" ]; then
+  SB_ALIAS_CONNECTION_STRING=$(az servicebus georecovery-alias authorization-rule keys list \
+    --resource-group "$RG_PRIMARY" \
+    --namespace-name "$SB_PRIMARY" \
+    --alias "$SB_ALIAS" \
+    --name RootManageSharedAccessKey \
+    --query aliasPrimaryConnectionString \
+    --output tsv)
+fi
+
+export SB_ALIAS_CONNECTION_STRING
+
+cat > /tmp/servicebus_send.py <<'PY'
+import json
+import os
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+
+connection_string = os.environ["SB_ALIAS_CONNECTION_STRING"]
+queue_name = "orders-queue"
+payloads = [
+    {"orderId": "ORD-001", "item": "Widget", "qty": 5},
+    {"orderId": "ORD-002", "item": "Gadget", "qty": 3},
+]
+
+with ServiceBusClient.from_connection_string(connection_string) as client:
+    sender = client.get_queue_sender(queue_name=queue_name)
+    with sender:
+        for payload in payloads:
+            sender.send_messages(ServiceBusMessage(json.dumps(payload)))
+            print(f"Sent {payload['orderId']}")
+PY
+
+python /tmp/servicebus_send.py
 ```
 
-### Option B: Service Bus Explorer / Azure Portal
+  </div>
 
-You can also use the **Azure Portal** → Service Bus namespace → Queues →
-orders-queue → Service Bus Explorer → **Send Messages** tab. Make sure you
-navigate to the alias or primary namespace to send.
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+python -m pip install --quiet azure-servicebus
+
+if (-not $SB_ALIAS_CONNECTION_STRING) {
+    $SB_ALIAS_CONNECTION_STRING = az servicebus georecovery-alias authorization-rule keys list `
+      --resource-group $RG_PRIMARY `
+      --namespace-name $SB_PRIMARY `
+      --alias $SB_ALIAS `
+      --name RootManageSharedAccessKey `
+      --query aliasPrimaryConnectionString `
+      --output tsv
+}
+
+$env:SB_ALIAS_CONNECTION_STRING = $SB_ALIAS_CONNECTION_STRING
+
+@'
+import json
+import os
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+
+connection_string = os.environ["SB_ALIAS_CONNECTION_STRING"]
+queue_name = "orders-queue"
+payloads = [
+    {"orderId": "ORD-001", "item": "Widget", "qty": 5},
+    {"orderId": "ORD-002", "item": "Gadget", "qty": 3},
+]
+
+with ServiceBusClient.from_connection_string(connection_string) as client:
+    sender = client.get_queue_sender(queue_name=queue_name)
+    with sender:
+        for payload in payloads:
+            sender.send_messages(ServiceBusMessage(json.dumps(payload)))
+            print(f"Sent {payload['orderId']}")
+'@ | Set-Content -Path (Join-Path ([System.IO.Path]::GetTempPath()) "servicebus_send.py")
+
+python (Join-Path ([System.IO.Path]::GetTempPath()) "servicebus_send.py")
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the **primary** namespace.
+2. Select **Queues** → `orders-queue` → **Service Bus Explorer**.
+3. Send two messages such as `ORD-001` and `ORD-002`.
+4. Remember that the portal explorer is namespace-scoped. For a true alias-based client test, use the shell tabs with the alias connection string from Step 10.
+
+  </div>
+</div>
+
+
 
 ---
 
-## Step 13 — Receive Messages from the Alias
+## Step 13 — Peek and Receive Messages
 
-```azurecli
-# Peek at messages (non-destructive)
-az servicebus queue peek \
-  --namespace-name $SB_ALIAS \
-  --resource-group $RG_PRIMARY \
-  --queue-name orders-queue \
-  --max-count 5 \
-  --output table
+First look at the queue non-destructively, then consume a message to confirm the namespace is working end to end.
 
-# Receive and delete a message (destructive)
-az servicebus queue receive \
-  --namespace-name $SB_ALIAS \
-  --resource-group $RG_PRIMARY \
-  --queue-name orders-queue \
-  --output json
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
+if [ -z "$SB_ALIAS_CONNECTION_STRING" ]; then
+  SB_ALIAS_CONNECTION_STRING=$(az servicebus georecovery-alias authorization-rule keys list \
+    --resource-group "$RG_PRIMARY" \
+    --namespace-name "$SB_PRIMARY" \
+    --alias "$SB_ALIAS" \
+    --name RootManageSharedAccessKey \
+    --query aliasPrimaryConnectionString \
+    --output tsv)
+fi
+
+export SB_ALIAS_CONNECTION_STRING
+
+cat > /tmp/servicebus_receive.py <<'PY'
+import os
+from azure.servicebus import ServiceBusClient
+
+connection_string = os.environ["SB_ALIAS_CONNECTION_STRING"]
+queue_name = "orders-queue"
+
+with ServiceBusClient.from_connection_string(connection_string) as client:
+    receiver = client.get_queue_receiver(queue_name=queue_name, max_wait_time=5)
+    with receiver:
+        peeked = receiver.peek_messages(max_message_count=5)
+        print("Peeked messages:")
+        for message in peeked:
+            print(str(message))
+
+        received = receiver.receive_messages(max_message_count=1, max_wait_time=5)
+        print("Received messages:")
+        for message in received:
+            print(str(message))
+            receiver.complete_message(message)
+PY
+
+python /tmp/servicebus_receive.py
 ```
 
-This confirms that messages sent to the alias flow through the **primary**
-namespace in Sweden Central as expected.
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+if (-not $SB_ALIAS_CONNECTION_STRING) {
+    $SB_ALIAS_CONNECTION_STRING = az servicebus georecovery-alias authorization-rule keys list `
+      --resource-group $RG_PRIMARY `
+      --namespace-name $SB_PRIMARY `
+      --alias $SB_ALIAS `
+      --name RootManageSharedAccessKey `
+      --query aliasPrimaryConnectionString `
+      --output tsv
+}
+
+$env:SB_ALIAS_CONNECTION_STRING = $SB_ALIAS_CONNECTION_STRING
+
+@'
+import os
+from azure.servicebus import ServiceBusClient
+
+connection_string = os.environ["SB_ALIAS_CONNECTION_STRING"]
+queue_name = "orders-queue"
+
+with ServiceBusClient.from_connection_string(connection_string) as client:
+    receiver = client.get_queue_receiver(queue_name=queue_name, max_wait_time=5)
+    with receiver:
+        peeked = receiver.peek_messages(max_message_count=5)
+        print("Peeked messages:")
+        for message in peeked:
+            print(str(message))
+
+        received = receiver.receive_messages(max_message_count=1, max_wait_time=5)
+        print("Received messages:")
+        for message in received:
+            print(str(message))
+            receiver.complete_message(message)
+'@ | Set-Content -Path (Join-Path ([System.IO.Path]::GetTempPath()) "servicebus_receive.py")
+
+python (Join-Path ([System.IO.Path]::GetTempPath()) "servicebus_receive.py")
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. In **Service Bus Explorer**, use **Peek from start** to view the messages without removing them.
+2. Then use **Receive mode** to consume one message.
+3. The queue should now show one fewer active message than before.
+
+  </div>
+</div>
+
+
 
 ---
 
 ## Step 14 — Send Additional Messages Before Failover
 
-Send a few more messages to demonstrate that in-flight messages are lost during
-failover.
+Queue up a few more messages so you can observe that Geo-DR does not transfer them into the secondary during failover.
 
-```azurecli
-for i in $(seq 100 105); do
-  az servicebus queue send \
-    --namespace-name $SB_ALIAS \
-    --resource-group $RG_PRIMARY \
-    --queue-name orders-queue \
-    --body "{\"orderId\": \"ORD-${i}\", \"item\": \"Pre-failover-item\", \"qty\": ${i}}" \
-    --output none
-done
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-echo "Sent 6 pre-failover messages."
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
-# Check the message count on the primary
+```bash
+if [ -z "$SB_ALIAS_CONNECTION_STRING" ]; then
+  SB_ALIAS_CONNECTION_STRING=$(az servicebus georecovery-alias authorization-rule keys list \
+    --resource-group "$RG_PRIMARY" \
+    --namespace-name "$SB_PRIMARY" \
+    --alias "$SB_ALIAS" \
+    --name RootManageSharedAccessKey \
+    --query aliasPrimaryConnectionString \
+    --output tsv)
+fi
+
+export SB_ALIAS_CONNECTION_STRING
+
+python - <<'PY'
+import json
+import os
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+
+connection_string = os.environ["SB_ALIAS_CONNECTION_STRING"]
+with ServiceBusClient.from_connection_string(connection_string) as client:
+    sender = client.get_queue_sender(queue_name="orders-queue")
+    with sender:
+        for i in range(100, 106):
+            body = json.dumps({"orderId": f"ORD-{i}", "item": "Pre-failover-item", "qty": i})
+            sender.send_messages(ServiceBusMessage(body))
+            print(f"Sent ORD-{i}")
+PY
+
 az servicebus queue show \
-  --namespace-name $SB_PRIMARY \
-  --resource-group $RG_PRIMARY \
+  --namespace-name "$SB_PRIMARY" \
+  --resource-group "$RG_PRIMARY" \
   --name orders-queue \
-  --query "countDetails.activeMessageCount" \
+  --query countDetails.activeMessageCount \
   --output tsv
 ```
 
-> ⚠️ **Remember:** These messages live **only** in the primary namespace. They
-> will **not** survive the failover.
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+if (-not $SB_ALIAS_CONNECTION_STRING) {
+    $SB_ALIAS_CONNECTION_STRING = az servicebus georecovery-alias authorization-rule keys list `
+      --resource-group $RG_PRIMARY `
+      --namespace-name $SB_PRIMARY `
+      --alias $SB_ALIAS `
+      --name RootManageSharedAccessKey `
+      --query aliasPrimaryConnectionString `
+      --output tsv
+}
+
+$env:SB_ALIAS_CONNECTION_STRING = $SB_ALIAS_CONNECTION_STRING
+
+@'
+import json
+import os
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+
+connection_string = os.environ["SB_ALIAS_CONNECTION_STRING"]
+with ServiceBusClient.from_connection_string(connection_string) as client:
+    sender = client.get_queue_sender(queue_name="orders-queue")
+    with sender:
+        for i in range(100, 106):
+            body = json.dumps({"orderId": f"ORD-{i}", "item": "Pre-failover-item", "qty": i})
+            sender.send_messages(ServiceBusMessage(body))
+            print(f"Sent ORD-{i}")
+'@ | Set-Content -Path (Join-Path ([System.IO.Path]::GetTempPath()) "servicebus_send_many.py")
+
+python (Join-Path ([System.IO.Path]::GetTempPath()) "servicebus_send_many.py")
+
+az servicebus queue show `
+  --namespace-name $SB_PRIMARY `
+  --resource-group $RG_PRIMARY `
+  --name orders-queue `
+  --query countDetails.activeMessageCount `
+  --output tsv
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Use **Service Bus Explorer** again to send several extra messages.
+2. Refresh the queue overview and note the active message count.
+3. Keep that number in mind — it should not appear in Norway East after failover.
+
+  </div>
+</div>
+
+
+
+<div class="lab-note">
+<strong>Expected behaviour:</strong> These messages exist only in the active primary namespace. Geo-DR does not replicate queue contents.
+</div>
+
+
 
 ---
 
 ## Step 15 — Initiate Failover
 
-This is the critical disaster-recovery step. The failover command is executed
-against the **secondary** namespace.
+The failover command is issued against the current secondary namespace. This breaks the pairing and promotes Norway East.
 
-```azurecli
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 az servicebus georecovery-alias fail-over \
-  --resource-group $RG_SECONDARY \
-  --namespace-name $SB_SECONDARY \
-  --alias $SB_ALIAS
+  --resource-group "$RG_SECONDARY" \
+  --namespace-name "$SB_SECONDARY" \
+  --alias "$SB_ALIAS" \
+  --is-safe-failover false
 ```
 
-> ⚠️ **Important notes about failover:**
->
-> - Failover is a **one-way, irreversible** operation on the pairing.
-> - It **breaks the pairing** — the former primary is disconnected.
-> - The alias DNS record swings to the secondary namespace.
-> - Any **messages in the primary namespace are not transferred** and are lost.
-> - The operation can take **1–5 minutes** to complete.
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az servicebus georecovery-alias fail-over `
+  --resource-group $RG_SECONDARY `
+  --namespace-name $SB_SECONDARY `
+  --alias $SB_ALIAS `
+  --is-safe-failover false
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the **secondary** namespace in Norway East.
+2. Select **Geo recovery**.
+3. Choose the alias and select **Fail over**.
+4. Read the warning carefully and confirm the operation.
+
+  </div>
+</div>
+
+
+
+<div class="lab-note">
+<strong>Failover is one-way:</strong> After failover, the original primary is no longer paired. To regain DR protection later, you must create a new secondary and pair again.
+</div>
+
+
 
 ---
 
 ## Step 16 — Wait for Failover to Complete
 
-```azurecli
+Monitor the alias until Norway East reports itself as the primary.
+
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 while true; do
   STATE=$(az servicebus georecovery-alias show \
-    --resource-group $RG_SECONDARY \
-    --namespace-name $SB_SECONDARY \
-    --alias $SB_ALIAS \
-    --query "provisioningState" \
-    --output tsv 2>/dev/null)
+  --resource-group "$RG_SECONDARY" \
+  --namespace-name "$SB_SECONDARY" \
+  --alias "$SB_ALIAS" \
+  --query provisioningState \
+  --output tsv 2>/dev/null)
 
   echo "Failover state: $STATE"
-
-  if [ "$STATE" == "Succeeded" ] || [ -z "$STATE" ]; then
-    echo "Failover complete."
+  if [ "$STATE" = "Succeeded" ] || [ -z "$STATE" ]; then
     break
   fi
-
   sleep 15
 done
-```
 
-Verify the alias now shows the secondary as the active namespace:
-
-```azurecli
 az servicebus georecovery-alias show \
-  --resource-group $RG_SECONDARY \
-  --namespace-name $SB_SECONDARY \
-  --alias $SB_ALIAS \
-  --output json
+  --resource-group "$RG_SECONDARY" \
+  --namespace-name "$SB_SECONDARY" \
+  --alias "$SB_ALIAS" \
+  --output table
 ```
 
-Expected: `role` should now be `Primary` for the **secondary** namespace (Norway
-East), and `partnerNamespace` should be empty (pairing is broken).
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+do {
+    $STATE = az servicebus georecovery-alias show `
+      --resource-group $RG_SECONDARY `
+      --namespace-name $SB_SECONDARY `
+      --alias $SB_ALIAS `
+      --query provisioningState `
+      --output tsv 2>$null
+
+    Write-Host "Failover state: $STATE"
+    if ($STATE -and $STATE -ne "Succeeded") { Start-Sleep -Seconds 15 }
+} while ($STATE -and $STATE -ne "Succeeded")
+
+az servicebus georecovery-alias show `
+  --resource-group $RG_SECONDARY `
+  --namespace-name $SB_SECONDARY `
+  --alias $SB_ALIAS `
+  --output table
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Refresh the **Geo recovery** blade on the secondary namespace.
+2. Wait until the alias shows **Primary** or **PrimaryNotReplicating** in Norway East.
+3. The partner namespace reference should be gone or marked as detached.
+
+  </div>
+</div>
+
+
 
 ---
 
 ## Step 17 — Verify the Alias Now Points to the Secondary
 
-```azurecli
-echo "Alias FQDN: ${SB_ALIAS}.servicebus.windows.net"
-echo ""
-echo "Queues on secondary (now primary):"
-az servicebus queue list \
-  --namespace-name $SB_SECONDARY \
-  --resource-group $RG_SECONDARY \
-  --query "[].name" \
-  --output tsv
+Confirm the control plane and DNS both reflect the new active region.
 
-echo ""
-echo "Message count on secondary:"
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
+echo "Alias FQDN: $SB_ALIAS.servicebus.windows.net"
+
+nslookup "$SB_ALIAS.servicebus.windows.net"
+
 az servicebus queue show \
-  --namespace-name $SB_SECONDARY \
-  --resource-group $RG_SECONDARY \
+  --namespace-name "$SB_SECONDARY" \
+  --resource-group "$RG_SECONDARY" \
   --name orders-queue \
-  --query "countDetails.activeMessageCount" \
+  --query countDetails.activeMessageCount \
   --output tsv
 ```
 
-> The active message count on the secondary should be **0** — confirming that
-> the pre-failover messages were **not** replicated. This is the expected
-> behaviour. Geo-DR replicates metadata, not messages.
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+Write-Host "Alias FQDN: $SB_ALIAS.servicebus.windows.net"
+
+nslookup "$SB_ALIAS.servicebus.windows.net"
+
+az servicebus queue show `
+  --namespace-name $SB_SECONDARY `
+  --resource-group $RG_SECONDARY `
+  --name orders-queue `
+  --query countDetails.activeMessageCount `
+  --output tsv
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. On the secondary namespace, confirm **Geo recovery** now shows it as the active primary (often reported as **PrimaryNotReplicating** after a forced failover).
+2. Open `orders-queue` and inspect the active message count.
+3. It should be **0** or much lower than the pre-failover count, which proves the queued messages were not replicated.
+
+  </div>
+</div>
+
+
 
 ---
 
-## Step 18 — Send and Receive via Alias Post-Failover
+## Step 18 — Send and Receive After Failover
 
-Confirm that the alias is fully functional against the secondary namespace.
+Use the same alias connection string again. The client code should not change.
 
-```azurecli
-# Send a new message through the alias (now hitting Norway East)
-az servicebus queue send \
-  --namespace-name $SB_ALIAS \
-  --resource-group $RG_SECONDARY \
-  --queue-name orders-queue \
-  --body '{"orderId": "ORD-POST-001", "item": "Post-failover-item", "qty": 1}' \
-  --output table
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-echo "Sent post-failover message."
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
-# Receive the message
-az servicebus queue receive \
-  --namespace-name $SB_ALIAS \
-  --resource-group $RG_SECONDARY \
-  --queue-name orders-queue \
-  --output json
+```bash
+if [ -z "$SB_ALIAS_CONNECTION_STRING" ]; then
+  SB_ALIAS_CONNECTION_STRING=$(az servicebus georecovery-alias authorization-rule keys list \
+  --resource-group "$RG_SECONDARY" \
+  --namespace-name "$SB_SECONDARY" \
+  --alias "$SB_ALIAS" \
+  --name RootManageSharedAccessKey \
+  --query aliasPrimaryConnectionString \
+  --output tsv)
+  export SB_ALIAS_CONNECTION_STRING
+fi
+
+python - <<'PY'
+import json
+import os
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+
+connection_string = os.environ["SB_ALIAS_CONNECTION_STRING"]
+queue_name = "orders-queue"
+
+with ServiceBusClient.from_connection_string(connection_string) as client:
+    sender = client.get_queue_sender(queue_name=queue_name)
+    with sender:
+        sender.send_messages(ServiceBusMessage(json.dumps({"orderId": "ORD-POST-001", "item": "Post-failover-item", "qty": 1})))
+        print("Sent ORD-POST-001")
+
+    receiver = client.get_queue_receiver(queue_name=queue_name, max_wait_time=5)
+    with receiver:
+        for message in receiver.receive_messages(max_message_count=1, max_wait_time=5):
+            print(str(message))
+            receiver.complete_message(message)
+PY
 ```
 
-✅ If you received the `ORD-POST-001` message, the failover was successful. The
-alias is now serving traffic from Norway East, and your applications did not
-need any connection-string changes.
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+if (-not $SB_ALIAS_CONNECTION_STRING) {
+    $SB_ALIAS_CONNECTION_STRING = az servicebus georecovery-alias authorization-rule keys list `
+      --resource-group $RG_SECONDARY `
+      --namespace-name $SB_SECONDARY `
+      --alias $SB_ALIAS `
+      --name RootManageSharedAccessKey `
+      --query aliasPrimaryConnectionString `
+      --output tsv
+}
+
+$env:SB_ALIAS_CONNECTION_STRING = $SB_ALIAS_CONNECTION_STRING
+
+@'
+import json
+import os
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+
+connection_string = os.environ["SB_ALIAS_CONNECTION_STRING"]
+queue_name = "orders-queue"
+
+with ServiceBusClient.from_connection_string(connection_string) as client:
+    sender = client.get_queue_sender(queue_name=queue_name)
+    with sender:
+        sender.send_messages(ServiceBusMessage(json.dumps({"orderId": "ORD-POST-001", "item": "Post-failover-item", "qty": 1})))
+        print("Sent ORD-POST-001")
+
+    receiver = client.get_queue_receiver(queue_name=queue_name, max_wait_time=5)
+    with receiver:
+        for message in receiver.receive_messages(max_message_count=1, max_wait_time=5):
+            print(str(message))
+            receiver.complete_message(message)
+'@ | Set-Content -Path (Join-Path ([System.IO.Path]::GetTempPath()) "servicebus_post_failover.py")
+
+python (Join-Path ([System.IO.Path]::GetTempPath()) "servicebus_post_failover.py")
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Open the **promoted** namespace in Norway East.
+2. Use **Service Bus Explorer** on `orders-queue` to send a new message such as `ORD-POST-001`.
+3. Immediately receive it from the same queue.
+4. This validates the namespace is healthy after failover; your real applications would keep using the alias connection string rather than the portal explorer.
+
+  </div>
+</div>
+
+
 
 ---
 
 ## Step 19 — Inspect the Former Primary
 
-After failover, the former primary namespace still exists but is no longer part
-of a Geo-DR pairing.
+If the original region is still reachable, you can see the orphaned messages that never moved to the secondary.
 
-```azurecli
-# The old primary still has the pre-failover messages (if the region is available)
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
+
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
+
+```bash
 az servicebus queue show \
-  --namespace-name $SB_PRIMARY \
-  --resource-group $RG_PRIMARY \
+  --namespace-name "$SB_PRIMARY" \
+  --resource-group "$RG_PRIMARY" \
   --name orders-queue \
-  --query "countDetails.activeMessageCount" \
+  --query countDetails.activeMessageCount \
   --output tsv
 ```
 
-> If the former primary's region is still accessible, you could drain these
-> messages manually. In a real disaster scenario, the primary region may be
-> completely unavailable.
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az servicebus queue show `
+  --namespace-name $SB_PRIMARY `
+  --resource-group $RG_PRIMARY `
+  --name orders-queue `
+  --query countDetails.activeMessageCount `
+  --output tsv
+```
+
+  </div>
+
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
+
+1. Return to the original Sweden Central namespace.
+2. Open `orders-queue`.
+3. If the namespace is still available, you should see the pre-failover messages still there.
+
+  </div>
+</div>
+
+---
+
+## Validation Checklist
+
+| # | Check | Expected Result |
+|---|---|---|
+| 1 | Alias created and provisioned | `provisioningState = Succeeded` |
+| 2 | Queue and topic visible on secondary | `orders-queue` and `events-topic` appear in Norway East |
+| 3 | Alias connection string obtained | Endpoint uses `sb-alias-multiregion.servicebus.windows.net` |
+| 4 | Pre-failover messages sent | Messages appear only in the primary namespace |
+| 5 | Failover completed | Norway East reports `role = Primary*` (for example `PrimaryNotReplicating`) |
+| 6 | Post-failover message succeeds | Same alias connection string still works |
 
 ---
 
 ## Cleanup
 
-> ⚠️ **Service Bus Premium is expensive.** Delete these resources as soon as you
-> are finished.
+<div class="lab-tabs">
+  <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
+    <button class="lab-tabs__button is-active" data-tab="bash" aria-selected="true">Bash</button>
+    <button class="lab-tabs__button" data-tab="powershell" aria-selected="false">PowerShell</button>
+    <button class="lab-tabs__button" data-tab="portal" aria-selected="false">Portal</button>
+  </div>
 
-### Delete the Geo-DR alias (if still present)
+  <div class="lab-tabs__panel is-active" data-tab-panel="bash" markdown="1">
 
-```azurecli
-# Delete the alias from the current primary (secondary after failover)
+```bash
 az servicebus georecovery-alias delete \
-  --resource-group $RG_SECONDARY \
-  --namespace-name $SB_SECONDARY \
-  --alias $SB_ALIAS \
-  --output none 2>/dev/null
+  --resource-group "$RG_SECONDARY" \
+  --namespace-name "$SB_SECONDARY" \
+  --alias "$SB_ALIAS" \
+  --output none 2>/dev/null || true
 
-echo "Alias deleted (or already removed by failover)."
+az group delete --name "$RG_PRIMARY" --yes --no-wait
+az group delete --name "$RG_SECONDARY" --yes --no-wait
 ```
 
-### Delete both resource groups
+  </div>
 
-```azurecli
+  <div class="lab-tabs__panel" data-tab-panel="powershell" markdown="1">
+
+```powershell
+az servicebus georecovery-alias delete `
+  --resource-group $RG_SECONDARY `
+  --namespace-name $SB_SECONDARY `
+  --alias $SB_ALIAS `
+  --output none 2>$null
+
 az group delete --name $RG_PRIMARY --yes --no-wait
 az group delete --name $RG_SECONDARY --yes --no-wait
-
-echo "Resource group deletion initiated (runs in background)."
 ```
 
-### Verify cleanup
+  </div>
 
-```azurecli
-# Wait a few minutes, then confirm
-az group list \
-  --query "[?starts_with(name, 'rg-servicebus-dr')].name" \
-  --output tsv
-```
+  <div class="lab-tabs__panel" data-tab-panel="portal" markdown="1">
 
-Expected: no output (both groups deleted).
+1. If the alias still appears on the promoted namespace, delete it from **Geo recovery**.
+2. Delete both resource groups.
+3. Wait a few minutes and confirm the namespaces are gone.
+
+  </div>
+</div>
 
 ---
 
@@ -680,95 +1794,40 @@ Expected: no output (both groups deleted).
 
 ### What Geo-DR Gives You
 
-1. **Namespace continuity** — the alias FQDN survives a regional failure.
-2. **Metadata replication** — you don't need to recreate queues, topics,
-   subscriptions, filters, or SAS policies after failover.
-3. **Transparent failover** — connection strings using the alias don't change,
-   so applications reconnect automatically.
+1. **Namespace continuity** — the alias survives a regional failure.
+2. **Metadata replication** — queues, topics, subscriptions, filters, and SAS policies follow the active namespace.
+3. **Transparent reconnection** — apps that use the alias can reconnect without new configuration.
 
 ### What Geo-DR Does NOT Give You
 
-1. **Message replication** — messages sitting in queues or topic subscriptions
-   are **not** copied to the secondary. They exist only in the primary region.
-2. **Dead-letter queue contents** — dead-lettered messages are not replicated.
-3. **Scheduled / deferred messages** — these are per-namespace state and are
-   lost on failover.
-4. **Active sessions** — session state is not replicated.
-5. **Sequence number continuity** — sequence numbers restart on the secondary.
+1. **Message replication** — queued messages are not copied into the secondary namespace.
+2. **Dead-letter continuity** — dead-letter contents stay where they were created.
+3. **Deferred, scheduled, and locked state** — runtime state is not part of the replication contract.
+4. **Automatic re-pairing** — after failover, you must build a new DR pair yourself.
 
 ### After Failover: Re-establishing DR
 
-Once failover completes, the pairing is **broken**. To protect against a
-*second* regional failure:
+Once failover completes, the pairing is broken. To restore regional protection, create a **new** secondary namespace and pair the active namespace with it.
 
-1. Create a **new** Premium namespace in a third region (or re-use the original
-   primary region if it's recovered).
-2. Create a **new** Geo-DR pairing with the current active namespace as primary
-   and the new namespace as secondary.
+### Active-Active Alternatives (Application Level)
 
-### Active-Active Alternatives (Application-Level)
-
-If your application cannot tolerate any message loss, consider an
-**application-level active-active** pattern:
-
-```
-┌────────────┐         ┌────────────┐
-│ Namespace A│ ◄─────► │ Namespace B│
-│ (Region 1) │  app    │ (Region 2) │
-│             │ forward │             │
-└────────────┘         └────────────┘
-      ▲                       ▲
-      │                       │
-   Producers               Producers
-   (Region 1)              (Region 2)
-```
-
-- Each producer sends to its **local** namespace.
-- A **forwarder service** (or Azure Function) reads from Namespace A and sends
-  to Namespace B, and vice versa.
-- Consumers read from their local namespace and apply **idempotency** logic
-  (since messages may be duplicated).
-- This approach provides **zero message loss** at the cost of increased
-  complexity and potential duplicate processing.
+If message durability matters more than endpoint continuity, consider an active-active application pattern with dual writes or a forwarder service. That pattern is more complex, but it is the one that addresses message loss rather than just namespace recovery.
 
 ### When to Use Which Pattern
 
-| Scenario                                    | Recommended Pattern     |
-|---------------------------------------------|-------------------------|
-| Namespace continuity; messages are ephemeral | Geo-DR (this lab)       |
-| Zero message loss required                  | Active-active forwarder |
-| Multi-region writes with local latency      | Active-active forwarder |
-| Compliance: metadata must exist in 2 regions| Geo-DR (this lab)       |
+| Scenario | Recommended Pattern |
+|---|---|
+| Namespace continuity; messages are ephemeral | Geo-DR |
+| Zero message loss required | Application-level active-active |
+| Regional write locality in both regions | Application-level active-active |
+| Same connection string before and after failover | Geo-DR |
 
 ---
 
 ## Summary
 
-In this lab you:
-
-| Step | Action                                                    |
-|------|-----------------------------------------------------------|
-| 1–2  | Created resource groups in Sweden Central and Norway East |
-| 3–4  | Provisioned two Premium Service Bus namespaces            |
-| 5–6  | Created a test queue and topic with subscription          |
-| 7–9  | Established a Geo-DR pairing with a DNS alias             |
-| 10–11| Verified metadata replication to the secondary            |
-| 12–13| Sent and received messages through the alias              |
-| 14   | Sent additional messages to demonstrate message loss      |
-| 15–16| Initiated and monitored failover                          |
-| 17–18| Confirmed alias now serves traffic from the secondary     |
-| 19   | Inspected the former primary's orphaned messages          |
-
-**Key takeaways:**
-
-- Geo-DR protects your **namespace metadata and connection strings**, not your
-  messages.
-- Failover is a **manual, one-way** operation that breaks the pairing.
-- Applications using the **alias FQDN** require **zero reconfiguration** after
-  failover.
-- For **message-level** resilience, implement application-level forwarding
-  between namespaces.
+In this lab you created paired Premium namespaces, replicated queue/topic metadata, validated the alias endpoint, failed over to Norway East, and confirmed that the alias still worked afterward. The critical lesson is simple: **Geo-DR protects namespace metadata and connection strings, not queued messages**.
 
 ---
 
-[Next: Lab 7 — Azure Event Hubs Geo-Replication →](lab-07-event-hubs-geo-replication.md)
+[← Back to Index](../index.md) | [Next: Lab 7 — Azure Event Hubs Geo-Replication →](lab-07-event-hubs-geo-replication.md)
