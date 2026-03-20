@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 5: Azure Key Vault – Multi-Region Backup & Sync"
+title: "Lab 7: Azure Key Vault – Multi-Region Backup & Sync"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 5: Azure Key Vault – Multi-Region Backup & Sync
+# Lab 7: Azure Key Vault – Multi-Region Backup & Sync
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1314,4 +1314,4 @@ If your use case is primarily about key material and compliance, **Azure Key Vau
 
 ---
 
-[← Back to Index](../index.md) | [Next: Lab 6 — Azure Service Bus Geo-DR →](lab-06-service-bus-geo-dr.md)
+[← Back to Index](../index.md) | [Next: Lab 8 — Azure Service Bus Geo-DR →](lab-06-service-bus-geo-dr.md)

@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 11: Azure Database for MySQL – Cross-Region Read Replica"
+title: "Lab 5: Azure Database for MySQL – Cross-Region Read Replica"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 11: Azure Database for MySQL – Cross-Region Read Replica
+# Lab 5: Azure Database for MySQL – Cross-Region Read Replica
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1018,3 +1018,5 @@ Unlike Azure SQL Failover Groups, MySQL Flexible Server does not provide automat
 * 📖 [High availability concepts](https://learn.microsoft.com/azure/mysql/flexible-server/concepts-high-availability)
 
 ---
+
+[← Lab 4: Azure Cosmos DB Global Distribution](lab-04-cosmos-global-distribution.md) | [Back to Index](../index.md) | [Next: Lab 6 — Azure Database for PostgreSQL Read Replica →](lab-12-postgresql-geo-replication.md)

@@ -1789,4 +1789,4 @@ In this lab you:
 
 ---
 
-[← Back to Index](../index.md) | [Next: Lab 5 — Azure Key Vault Multi-Region →](lab-05-key-vault-multi-region.md)
+[← Back to Index](../index.md) | [Next: Lab 5 — Azure Database for MySQL Read Replica →](lab-11-mysql-geo-replication.md)

@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 8: Azure Container Registry – Geo-Replicated Registry"
+title: "Lab 10: Azure Container Registry – Geo-Replicated Registry"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 8: Azure Container Registry – Geo-Replicated Registry
+# Lab 10: Azure Container Registry – Geo-Replicated Registry
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1162,4 +1162,4 @@ ACR uses health-aware routing. If a replica becomes unhealthy, Traffic Manager m
 
 ---
 
-[← Back to Index](../index.md) | [Next: Lab 9 — Azure Data Factory DR →](lab-09-data-factory-dr.md)
+[← Back to Index](../index.md) | [Next: Lab 11 — Azure Data Factory DR →](lab-09-data-factory-dr.md)

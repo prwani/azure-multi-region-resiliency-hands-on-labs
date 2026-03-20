@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 12: Azure Database for PostgreSQL – Cross-Region Read Replica"
+title: "Lab 6: Azure Database for PostgreSQL – Cross-Region Read Replica"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 12: Azure Database for PostgreSQL – Cross-Region Read Replica
+# Lab 6: Azure Database for PostgreSQL – Cross-Region Read Replica
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1060,3 +1060,5 @@ PostgreSQL Flexible Server's cross-region failover is similar to MySQL's approac
 * 📖 [High availability overview](https://learn.microsoft.com/azure/postgresql/flexible-server/concepts-high-availability)
 
 ---
+
+[← Lab 5: Azure Database for MySQL Read Replica](lab-11-mysql-geo-replication.md) | [Back to Index](../index.md) | [Next: Lab 7 — Azure Key Vault Multi-Region →](lab-05-key-vault-multi-region.md)

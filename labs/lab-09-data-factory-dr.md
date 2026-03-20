@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 9: Azure Data Factory – Active/Passive Data Pipelines"
+title: "Lab 11: Azure Data Factory – Active/Passive Data Pipelines"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 9: Azure Data Factory – Active/Passive Data Pipelines
+# Lab 11: Azure Data Factory – Active/Passive Data Pipelines
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1745,5 +1745,5 @@ foreach ($TRIGGER in ($TRIGGERS -split "`n" | Where-Object { $_ })) {
 
 ---
 
-| [← Lab 8: ACR Geo-Replication](lab-08-acr-geo-replication.md) | [Back to Index](../index.md) | [Lab 10: Enterprise Prototype →](lab-10-enterprise-prototype.md) |
+| [← Lab 10: ACR Geo-Replication](lab-08-acr-geo-replication.md) | [Back to Index](../index.md) | [Lab 12: Enterprise Prototype →](lab-10-enterprise-prototype.md) |
 |:---|:---:|---:|

@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 6: Azure Service Bus – Geo-Disaster Recovery"
+title: "Lab 8: Azure Service Bus – Geo-Disaster Recovery"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 6: Azure Service Bus – Geo-Disaster Recovery
+# Lab 8: Azure Service Bus – Geo-Disaster Recovery
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1830,4 +1830,4 @@ In this lab you created paired Premium namespaces, replicated queue/topic metada
 
 ---
 
-[← Back to Index](../index.md) | [Next: Lab 7 — Azure Event Hubs Geo-Replication →](lab-07-event-hubs-geo-replication.md)
+[← Back to Index](../index.md) | [Next: Lab 9 — Azure Event Hubs Geo-Replication →](lab-07-event-hubs-geo-replication.md)
