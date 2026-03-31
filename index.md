@@ -17,56 +17,68 @@ These self-paced labs walk you through implementing multi-region strategies for 
 
 **Prerequisites:** Azure subscription with Contributor or Owner access, Azure CLI installed, and basic familiarity with Azure services.
 
+## How the `A` / `B` Variants Work
+
+- **`Lab X-a`** keeps the simpler baseline or public-edge flow for that scenario.
+- **`Lab X-b`** assumes [Lab 0](labs/lab-00-security-prereqs.md) is already complete and adapts the scenario to the secure hub-and-spoke foundation by using spoke placement, private endpoints, delegated subnets, or other private-networking patterns where the service supports them.
+- You can work the labs **strictly in order** or do an `a` lab first and then repeat the same scenario with the corresponding `b` variant.
+
 ---
+
+## 🛡️ Optional Foundation
+
+| Entry | What it sets up | Used by |
+|------|------------------|---------|
+| [Lab 0: Security Pre-Reqs – Optional Hub-and-Spoke Foundation](labs/lab-00-security-prereqs.md) | Builds the reusable dual-region hub-and-spoke landing zone with hub VNets, spoke VNets, Azure Firewall, Azure Bastion, staged route tables, and shared subnet conventions. | Every `Lab X-b` variant |
 
 ## 💾 Data & Storage
 
-| Lab | Services | Description |
-|-----|----------|-------------|
-| [Lab 1: Azure Blob Storage – Object Replication](labs/lab-02-blob-storage-replication.md) | Azure Storage (Blob) | Replicate blobs between non-paired regions using Object Replication with change feed and versioning. |
-| [Lab 2: Azure SQL Database – Geo-Replication & Failover](labs/lab-03-sql-geo-replication.md) | Azure SQL Database | Set up Active Geo-Replication, create a Failover Group, and test manual failover with zero data loss. |
-| [Lab 3: Azure Cosmos DB – Global Distribution](labs/lab-04-cosmos-global-distribution.md) | Azure Cosmos DB | Add secondary regions and enable multi-region writes for continuous global availability. |
-| [Lab 4: Azure Database for MySQL – Cross-Region Read Replica](labs/lab-11-mysql-geo-replication.md) | Azure Database for MySQL | Create a cross-region read replica, validate replication, and promote it during a failover drill. |
-| [Lab 5: Azure Database for PostgreSQL – Cross-Region Read Replica](labs/lab-12-postgresql-geo-replication.md) | Azure Database for PostgreSQL | Build a cross-region read replica, validate WAL replication, and promote it to a standalone primary. |
+| Lab | Baseline (`a`) | Secure (`b`) | Focus |
+|-----|----------------|--------------|-------|
+| 1 | [Lab 1-a: Azure Blob Storage – Object Replication across Regions](labs/lab-01a-blob-storage-replication.md) | [Lab 1-b: Azure Blob Storage – Object Replication with Private Endpoints](labs/lab-01b-blob-storage-private-endpoints.md) | Blob object replication with optional private endpoints in the regional spokes. |
+| 2 | [Lab 2-a: Azure SQL Database – Geo-Replication & Failover](labs/lab-02a-sql-geo-replication.md) | [Lab 2-b: Azure SQL Database – Private Geo-Replication & Failover](labs/lab-02b-sql-private-geo-replication.md) | SQL geo-replication, failover groups, and private SQL access from spoke VNets. |
+| 3 | [Lab 3-a: Azure Cosmos DB – Global Distribution](labs/lab-03a-cosmos-global-distribution.md) | [Lab 3-b: Azure Cosmos DB – Private Global Distribution](labs/lab-03b-cosmos-private-global-distribution.md) | Cosmos global distribution with optional private endpoints and regional validation paths. |
+| 4 | [Lab 4-a: Azure Database for MySQL – Public Cross-Region Read Replica](labs/lab-04a-mysql-geo-replication.md) | [Lab 4-b: Azure Database for MySQL – Private Cross-Region Read Replica](labs/lab-04b-mysql-private-geo-replication.md) | MySQL read replicas, promotion drills, and secure private-access networking. |
+| 5 | [Lab 5-a: Azure Database for PostgreSQL – Cross-Region Read Replica](labs/lab-05a-postgresql-geo-replication.md) | [Lab 5-b: Azure Database for PostgreSQL – Private Geo-Replication with Private Endpoints](labs/lab-05b-postgresql-private-geo-replication.md) | PostgreSQL read replicas with a private-endpoint-based secure path. |
 
 ## 🖥️ Compute
 
-| Lab | Services | Description |
-|-----|----------|-------------|
-| [Lab 6: Azure Virtual Machines – Cross-Region DR with Site Recovery](labs/lab-13-vm-site-recovery.md) | Azure Virtual Machines, Recovery Services vault, Site Recovery | Protect a regional VM with Azure Site Recovery, fail it over to Norway East, and prepare the workload for failback. |
-| [Lab 7: Multi-Region Web App with Traffic Manager & Chaos Studio](labs/lab-01-webapp-traffic-manager.md) | App Service, Functions, Traffic Manager, Chaos Studio | Deploy a web app to two regions, configure Traffic Manager for priority-based failover, and inject faults with Chaos Studio to validate DR. |
+| Lab | Baseline (`a`) | Secure (`b`) | Focus |
+|-----|----------------|--------------|-------|
+| 6 | [Lab 6-a: Azure Virtual Machines – Cross-Region DR with Site Recovery](labs/lab-06a-vm-site-recovery.md) | [Lab 6-b: Azure Virtual Machines – Cross-Region DR with Site Recovery (Secure Spoke & Bastion)](labs/lab-06b-vm-site-recovery-secure-spoke.md) | VM disaster recovery with Azure Site Recovery, then the spoke/Bastion-secured variant. |
+| 7 | [Lab 7-a: Baseline Multi-Region Web App with Traffic Manager & Chaos Studio](labs/lab-07a-webapp-traffic-manager.md) | [Lab 7-b: Multi-Region Web App with Traffic Manager, VNet Integration & Private Endpoints](labs/lab-07b-webapp-traffic-manager-private-networking.md) | Active-passive App Service failover with optional spoke integration and private dependencies. |
 
 ## 🔐 Security & Identity
 
-| Lab | Services | Description |
-|-----|----------|-------------|
-| [Lab 8: Azure Key Vault – Multi-Region Backup & Sync](labs/lab-05-key-vault-multi-region.md) | Azure Key Vault | Back up and sync secrets, keys, and certificates to a secondary Key Vault for cross-region resilience. |
+| Lab | Baseline (`a`) | Secure (`b`) | Focus |
+|-----|----------------|--------------|-------|
+| 8 | [Lab 8-a: Azure Key Vault – Multi-Region Backup & Sync](labs/lab-08a-key-vault-multi-region.md) | [Lab 8-b: Azure Key Vault – Private Endpoints & Multi-Region Sync](labs/lab-08b-key-vault-private-networking.md) | Key Vault backup/sync with a secure private-endpoint variant. |
 
 ## 📨 Messaging & Eventing
 
-| Lab | Services | Description |
-|-----|----------|-------------|
-| [Lab 9: Azure Service Bus – Geo-Disaster Recovery](labs/lab-06-service-bus-geo-dr.md) | Azure Service Bus | Create a geo-DR alias between namespaces in two regions and test failover of the messaging tier. |
-| [Lab 10: Azure Event Hubs – Geo-Replication Failover](labs/lab-07-event-hubs-geo-replication.md) | Azure Event Hubs | Set up geo-replication for Event Hubs namespaces and validate failover for streaming workloads. |
+| Lab | Baseline (`a`) | Secure (`b`) | Focus |
+|-----|----------------|--------------|-------|
+| 9 | [Lab 9-a: Azure Service Bus – Geo-Disaster Recovery](labs/lab-09a-service-bus-geo-dr.md) | [Lab 9-b: Azure Service Bus – Private Networking](labs/lab-09b-service-bus-private-networking.md) | Service Bus Geo-DR aliasing with a private-endpoint messaging path. |
+| 10 | [Lab 10-a: Azure Event Hubs – Geo-Replication Failover](labs/lab-10a-event-hubs-geo-replication.md) | [Lab 10-b: Azure Event Hubs – Private Networking](labs/lab-10b-event-hubs-private-networking.md) | Event Hubs geo-replication with private endpoints, private DNS, and regional validation VMs. |
 
 ## 📦 Containers & DevOps
 
-| Lab | Services | Description |
-|-----|----------|-------------|
-| [Lab 11: Azure Container Registry – Geo-Replicated Registry](labs/lab-08-acr-geo-replication.md) | Azure Container Registry | Create a Premium ACR with geo-replicas so container images are close to every deployment region. |
-| [Lab 12: AKS Multi-Cluster – Global Routing with Fleet, ACR, and Front Door](labs/lab-14-aks-multi-cluster.md) | AKS, Azure Kubernetes Fleet Manager, Azure Container Registry, Azure Front Door | Run two regional AKS clusters, coordinate them with Fleet, publish from geo-replicated ACR, and validate Front Door failover. |
+| Lab | Baseline (`a`) | Secure (`b`) | Focus |
+|-----|----------------|--------------|-------|
+| 11 | [Lab 11-a: Azure Container Registry – Geo-Replication](labs/lab-11a-acr-geo-replication.md) | [Lab 11-b: Azure Container Registry – Private Networking](labs/lab-11b-acr-private-networking.md) | ACR geo-replication with managed-identity pulls from a private-networked registry. |
+| 12 | [Lab 12-a: Baseline AKS Multi-Cluster – Global Routing with Fleet, ACR, and Front Door](labs/lab-12a-aks-multi-cluster.md) | [Lab 12-b: AKS Multi-Cluster – Hub-and-Spoke with Fleet, ACR, Application Gateway, and Front Door](labs/lab-12b-aks-multi-cluster-hub-spoke.md) | AKS multi-cluster routing, then the secure hub-and-spoke/App Gateway variant. |
 
 ## ⚙️ Data Integration
 
-| Lab | Services | Description |
-|-----|----------|-------------|
-| [Lab 13: Azure Data Factory – Active/Passive Pipelines](labs/lab-09-data-factory-dr.md) | Azure Data Factory | Maintain duplicate pipelines across regions for data integration resilience. |
+| Lab | Baseline (`a`) | Secure (`b`) | Focus |
+|-----|----------------|--------------|-------|
+| 13 | [Lab 13-a: Azure Data Factory – Active/Passive Data Pipelines](labs/lab-13a-data-factory-dr.md) | [Lab 13-b: Azure Data Factory – Private Networking and Spoke Connectivity](labs/lab-13b-data-factory-private-networking.md) | Data Factory DR with a private SHIR + private-endpoint data path. |
 
 ## 🏢 Capstone
 
-| Lab | Services | Description |
-|-----|----------|-------------|
-| [Lab 14: Integrated Enterprise App – Multi-Region Prototype](labs/lab-10-enterprise-prototype.md) | App Service, Functions, SQL, Cosmos DB, Storage, Key Vault, Service Bus, Front Door | Bring it all together: deploy a full multi-region enterprise application, configure every layer for resilience, and test coordinated failover. |
+| Lab | Baseline (`a`) | Secure (`b`) | Focus |
+|-----|----------------|--------------|-------|
+| 14 | [Lab 14-a: Integrated Enterprise App – Multi-Region Prototype](labs/lab-14a-enterprise-prototype.md) | [Lab 14-b: Integrated Enterprise App – Secure Networking](labs/lab-14b-enterprise-prototype-secure-networking.md) | End-to-end enterprise deployment in the baseline path or the secure hub-and-spoke landing zone. |
 
 ---
 
@@ -74,12 +86,14 @@ These self-paced labs walk you through implementing multi-region strategies for 
 
 1. **Choose your regions.** These labs default to **Sweden Central** (primary) and **Norway East** (secondary) — a validated non-paired combination with 91.5% service coverage and sub-10 ms latency. You can substitute any two non-paired regions.
 
-2. **Set up your environment.** Ensure you have:
+2. **Choose your track.** If you want the secure/private path, start with **Lab 0** and then use the `b` variants. If you want the simpler path first, start with the `a` variants.
+
+3. **Set up your environment.** Ensure you have:
    - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (v2.60+)
    - An authenticated session (`az login`)
    - Contributor or Owner access on your target subscription
 
-3. **Work through the labs in order** (recommended) or jump to a specific service that interests you. Labs 1–13 each focus on one service or deployment pattern; Lab 14 integrates everything.
+4. **Work through the labs in order** (recommended) or jump to a specific service that interests you. The sequence stays the same across both tracks; only the networking posture changes.
 
 ## Naming Conventions
 
@@ -87,16 +101,16 @@ Throughout these labs, resources use names that include purpose and region codes
 
 | Pattern | Example | Meaning |
 |---------|---------|---------|
-| `rg-<purpose>-<region>` | `rg-dr-swc` | Resource group in Sweden Central |
-| `<service>-dr-<region>` | `webapp-dr-noe` | Web app DR instance in Norway East |
-| `<service>-multiregion` | `cosmos-multiregion` | Multi-region enabled resource |
+| `rg-<role>-<region>` | `rg-spoke-swc` | Resource group in Sweden Central |
+| `vnet-<role>-<region>` | `vnet-hub-noe` | Hub or spoke virtual network in Norway East |
+| `<service>-<purpose>-<region>` | `webapp-dr-noe` | Workload resource in a specific region |
 
 ## Related Repositories
 
 | Repository | Used In |
 |------------|---------|
-| [prwani/multi-region-nonpaired-azurestorage](https://github.com/prwani/multi-region-nonpaired-azurestorage) | Lab 1 — Blob Storage Object Replication scripts & Bicep templates |
-| [prwani/multi-region-nonpaired-enterprise-prototype](https://github.com/prwani/multi-region-nonpaired-enterprise-prototype) | Lab 14 — Enterprise prototype with topology-driven deployment |
+| [prwani/multi-region-nonpaired-azurestorage](https://github.com/prwani/multi-region-nonpaired-azurestorage) | Lab 1-a / Lab 1-b — Blob Storage object replication scripts & templates |
+| [prwani/multi-region-nonpaired-enterprise-prototype](https://github.com/prwani/multi-region-nonpaired-enterprise-prototype) | Lab 14-a / Lab 14-b — Enterprise prototype with topology-driven deployment |
 
 ## Further Reading
 
