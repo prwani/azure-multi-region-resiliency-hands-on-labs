@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 3: Azure SQL Database – Geo-Replication &amp; Failover"
+title: "Lab 2: Azure SQL Database – Geo-Replication &amp; Failover"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 3: Azure SQL Database – Geo-Replication & Failover
+# Lab 2: Azure SQL Database – Geo-Replication & Failover
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1671,4 +1671,4 @@ when lag exceeds your RPO threshold.
 
 ---
 
-[← Back to Index](../index.md) · [Next: Lab 4 — Azure Cosmos DB Global Distribution →](lab-04-cosmos-global-distribution.md)
+[← Back to Index](../index.md) · [Next: Lab 3 — Azure Cosmos DB Global Distribution →](lab-04-cosmos-global-distribution.md)

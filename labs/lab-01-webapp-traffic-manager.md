@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 1: Multi-Region Web App with Traffic Manager & Chaos Studio"
+title: "Lab 7: Multi-Region Web App with Traffic Manager & Chaos Studio"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 1: Multi-Region Web App with Traffic Manager & Chaos Studio
+# Lab 7: Multi-Region Web App with Traffic Manager & Chaos Studio
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1492,4 +1492,4 @@ This lab uses **Sweden Central** and **Norway East** to show that multi-region r
 
 Chaos Studio lets you test the full failover path in a repeatable, explicit way instead of guessing how an outage might behave. It is a good foundation for more advanced fault-injection scenarios later.
 
-[Next: Lab 2 — Azure Blob Storage Object Replication →](lab-02-blob-storage-replication.md)
+[← Lab 6: Azure Virtual Machines DR with Site Recovery](lab-13-vm-site-recovery.md) | [Back to Index](../index.md) | [Next: Lab 8 — Azure Key Vault Multi-Region →](lab-05-key-vault-multi-region.md)

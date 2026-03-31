@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 9: Azure Event Hubs – Geo-Replication Failover"
+title: "Lab 10: Azure Event Hubs – Geo-Replication Failover"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 9: Azure Event Hubs – Geo-Replication Failover
+# Lab 10: Azure Event Hubs – Geo-Replication Failover
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1406,4 +1406,4 @@ In this lab you created paired Event Hubs namespaces, replicated Event Hub metad
 
 ---
 
-[← Back to Index](../index.md) | [Next: Lab 10 — Azure Container Registry Geo-Replication →](lab-08-acr-geo-replication.md)
+[← Back to Index](../index.md) | [Next: Lab 11 — Azure Container Registry Geo-Replication →](lab-08-acr-geo-replication.md)

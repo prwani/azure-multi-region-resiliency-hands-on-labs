@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 12: Integrated Enterprise App – Multi-Region Prototype"
+title: "Lab 14: Integrated Enterprise App – Multi-Region Prototype"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 12: Integrated Enterprise App – Multi-Region Prototype
+# Lab 14: Integrated Enterprise App – Multi-Region Prototype
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -247,7 +247,7 @@ html.lab-tabs-js .lab-tabs__panel.is-active {
 
 ## Why End-to-End Multi-Region Matters
 
-In Labs 1–11 you learned how to make **individual** Azure services resilient across regions: web apps behind Traffic Manager, SQL with failover groups, Cosmos DB with multi-region writes, Storage with object replication, MySQL and PostgreSQL with cross-region read replicas, Key Vault backup and sync, Service Bus geo-DR aliases, Event Hubs geo-replication, ACR geo-replicas, and Data Factory active/passive pipelines.
+In Labs 1–13 you learned how to make **individual** Azure services and platform patterns resilient across regions: Blob Storage with object replication, SQL with failover groups, Cosmos DB with multi-region writes, MySQL and PostgreSQL with cross-region read replicas, Azure VM disaster recovery with Site Recovery, App Service behind Traffic Manager, Key Vault backup and sync, Service Bus geo-DR aliases, Event Hubs geo-replication, ACR geo-replicas, AKS multi-cluster routing, and Data Factory active/passive pipelines.
 
 Each of those labs solves one piece of the puzzle. But here is the hard truth:
 
@@ -262,7 +262,7 @@ Each of those labs solves one piece of the puzzle. But here is the hard truth:
 
 This lab uses the **[multi-region-nonpaired-enterprise-prototype](https://github.com/prwani/multi-region-nonpaired-enterprise-prototype)** repository as the reference implementation. The prototype implements a three-step deployment model — Primary Baseline → Discover & Recommend → Enable Secondary — driven by a topology manifest. You will deploy it, configure it, test failover, and understand how all the pieces fit together.
 
-> **⏱ Estimated time:** 2–3 hours (shorter if you already have resources from Labs 1–11)
+> **⏱ Estimated time:** 2–3 hours (shorter if you already have resources from Labs 1–13)
 
 ---
 
@@ -296,15 +296,19 @@ The prototype deploys a multi-tier application across two non-paired Azure regio
 
 | Layer | Mechanism | Lab Reference |
 |-------|-----------|---------------|
-| Web / Compute | Active-passive App Service + Traffic Manager or Front Door | [Lab 1](lab-01-webapp-traffic-manager.md) |
-| Blob Storage | Object Replication (async, change-feed-based) | [Lab 2](lab-02-blob-storage-replication.md) |
-| SQL Database | Active Geo-Replication + Failover Group | [Lab 3](lab-03-sql-geo-replication.md) |
-| Cosmos DB | Multi-region writes with automatic failover | [Lab 4](lab-04-cosmos-global-distribution.md) |
-| Key Vault | Backup / restore sync to secondary vault | [Lab 7](lab-05-key-vault-multi-region.md) |
-| Service Bus | Geo-DR alias (metadata replication) | [Lab 8](lab-06-service-bus-geo-dr.md) |
-| Event Hubs | Geo-replication with consumer-group failover | [Lab 9](lab-07-event-hubs-geo-replication.md) |
-| Container Registry | Premium geo-replicated ACR | [Lab 10](lab-08-acr-geo-replication.md) |
-| Data Factory | Active/passive pipeline duplication | [Lab 11](lab-09-data-factory-dr.md) |
+| Blob Storage | Object Replication (async, change-feed-based) | [Lab 1](lab-02-blob-storage-replication.md) |
+| SQL Database | Active Geo-Replication + Failover Group | [Lab 2](lab-03-sql-geo-replication.md) |
+| Cosmos DB | Multi-region writes with automatic failover | [Lab 3](lab-04-cosmos-global-distribution.md) |
+| MySQL Flexible Server | Cross-region read replica | [Lab 4](lab-11-mysql-geo-replication.md) |
+| PostgreSQL Flexible Server | Cross-region read replica | [Lab 5](lab-12-postgresql-geo-replication.md) |
+| Virtual Machines | Azure Site Recovery (Azure-to-Azure) | [Lab 6](lab-13-vm-site-recovery.md) |
+| Web / Compute | Active-passive App Service + Traffic Manager | [Lab 7](lab-01-webapp-traffic-manager.md) |
+| Key Vault | Backup / restore sync to secondary vault | [Lab 8](lab-05-key-vault-multi-region.md) |
+| Service Bus | Geo-DR alias (metadata replication) | [Lab 9](lab-06-service-bus-geo-dr.md) |
+| Event Hubs | Geo-replication with consumer-group failover | [Lab 10](lab-07-event-hubs-geo-replication.md) |
+| Container Registry | Premium geo-replicated ACR | [Lab 11](lab-08-acr-geo-replication.md) |
+| AKS multi-cluster | Fleet + Front Door + regional clusters | [Lab 12](lab-14-aks-multi-cluster.md) |
+| Data Factory | Active/passive pipeline duplication | [Lab 13](lab-09-data-factory-dr.md) |
 
 ### Three-Step Deployment Model
 
@@ -344,19 +348,21 @@ The default region pair **Sweden Central → Norway East** achieves the highest 
 
 ### Concepts from Previous Labs
 
-This lab assumes you are comfortable with the concepts introduced in Labs 1–11. You do not need to have the resources from those labs still running, but you should understand:
+This lab assumes you are comfortable with the concepts introduced in Labs 1–13. You do not need to have the resources from those labs still running, but you should understand:
 
-- **[Lab 1](lab-01-webapp-traffic-manager.md):** Traffic Manager profiles, priority-based routing, health probes, Chaos Studio fault injection
-- **[Lab 2](lab-02-blob-storage-replication.md):** Storage account versioning, change feed, object replication policies
-- **[Lab 3](lab-03-sql-geo-replication.md):** SQL active geo-replication, failover groups, read-only listener endpoints
-- **[Lab 4](lab-04-cosmos-global-distribution.md):** Cosmos DB multi-region writes, consistency levels, automatic failover policies
-- **[Lab 5](lab-11-mysql-geo-replication.md):** MySQL Flexible Server cross-region read replicas, replica promotion, and endpoint cutover planning
-- **[Lab 6](lab-12-postgresql-geo-replication.md):** PostgreSQL Flexible Server cross-region read replicas, virtual endpoints, and replica promotion
-- **[Lab 7](lab-05-key-vault-multi-region.md):** Key Vault backup/restore, cross-region secret synchronization
-- **[Lab 8](lab-06-service-bus-geo-dr.md):** Service Bus Premium namespaces, geo-DR pairing, alias FQDNs, metadata-only replication
-- **[Lab 9](lab-07-event-hubs-geo-replication.md):** Event Hubs geo-replication, consumer group offset management
-- **[Lab 10](lab-08-acr-geo-replication.md):** ACR Premium tier, geo-replication, region-local pulls
-- **[Lab 11](lab-09-data-factory-dr.md):** Data Factory pipeline duplication, linked service reconfiguration
+- **[Lab 1](lab-02-blob-storage-replication.md):** Storage account versioning, change feed, object replication policies
+- **[Lab 2](lab-03-sql-geo-replication.md):** SQL active geo-replication, failover groups, read-only listener endpoints
+- **[Lab 3](lab-04-cosmos-global-distribution.md):** Cosmos DB multi-region writes, consistency levels, automatic failover policies
+- **[Lab 4](lab-11-mysql-geo-replication.md):** MySQL Flexible Server cross-region read replicas, replica promotion, and endpoint cutover planning
+- **[Lab 5](lab-12-postgresql-geo-replication.md):** PostgreSQL Flexible Server cross-region read replicas, virtual endpoints, and replica promotion
+- **[Lab 6](lab-13-vm-site-recovery.md):** Azure Site Recovery fabrics, mappings, failover drills, and failback preparation for VMs
+- **[Lab 7](lab-01-webapp-traffic-manager.md):** Traffic Manager profiles, priority-based routing, health probes, Chaos Studio fault injection
+- **[Lab 8](lab-05-key-vault-multi-region.md):** Key Vault backup/restore, cross-region secret synchronization
+- **[Lab 9](lab-06-service-bus-geo-dr.md):** Service Bus Premium namespaces, geo-DR pairing, alias FQDNs, metadata-only replication
+- **[Lab 10](lab-07-event-hubs-geo-replication.md):** Event Hubs geo-replication, consumer group offset management
+- **[Lab 11](lab-08-acr-geo-replication.md):** ACR Premium tier, geo-replication, region-local pulls
+- **[Lab 12](lab-14-aks-multi-cluster.md):** Multi-cluster AKS operations, Fleet membership, and Front Door routing patterns
+- **[Lab 13](lab-09-data-factory-dr.md):** Data Factory pipeline duplication, linked service reconfiguration
 
 ### Tools Required
 
@@ -750,11 +756,11 @@ az keyvault show -g rg-security-swedencentral -n <your-keyvault> --query "proper
 At this point you have a fully working single-region application. This mirrors what many teams have in production — and it is exactly what needs multi-region protection.
 
 **Cross-reference — this step combines concepts from:**
-- [Lab 1 — Web App deployment](lab-01-webapp-traffic-manager.md) (App Service provisioning)
-- [Lab 3 — SQL Database creation](lab-03-sql-geo-replication.md) (SQL Server + database)
-- [Lab 4 — Cosmos DB setup](lab-04-cosmos-global-distribution.md) (single-region Cosmos account)
-- [Lab 5 — Key Vault creation](lab-05-key-vault-multi-region.md) (primary Key Vault)
-- [Lab 6 — Service Bus namespace](lab-06-service-bus-geo-dr.md) (Premium namespace)
+- [Lab 7 — Web App deployment](lab-01-webapp-traffic-manager.md) (App Service provisioning)
+- [Lab 2 — SQL Database creation](lab-03-sql-geo-replication.md) (SQL Server + database)
+- [Lab 3 — Cosmos DB setup](lab-04-cosmos-global-distribution.md) (single-region Cosmos account)
+- [Lab 8 — Key Vault creation](lab-05-key-vault-multi-region.md) (primary Key Vault)
+- [Lab 9 — Service Bus namespace](lab-06-service-bus-geo-dr.md) (Premium namespace)
 
 ---
 
@@ -895,7 +901,7 @@ The dry run should confirm that:
 
 After Step 3 completes, verify every cross-region replication relationship.
 
-#### SQL Database — Failover Group ([Lab 3](lab-03-sql-geo-replication.md))
+#### SQL Database — Failover Group ([Lab 2](lab-03-sql-geo-replication.md))
 
 <div class="lab-tabs">
       <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
@@ -932,7 +938,7 @@ az sql failover-group show -g rg-data-swedencentral -s <primary-sql-server> -n <
       </div>
     </div>
 
-#### Cosmos DB — Multi-Region ([Lab 4](lab-04-cosmos-global-distribution.md))
+#### Cosmos DB — Multi-Region ([Lab 3](lab-04-cosmos-global-distribution.md))
 
 <div class="lab-tabs">
       <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
@@ -966,7 +972,7 @@ az cosmosdb show -g rg-data-swedencentral -n <cosmos-account> --query "readLocat
       </div>
     </div>
 
-#### Storage — Object Replication ([Lab 2](lab-02-blob-storage-replication.md))
+#### Storage — Object Replication ([Lab 1](lab-02-blob-storage-replication.md))
 
 <div class="lab-tabs">
       <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
@@ -1000,7 +1006,7 @@ az storage account or-policy list --account-name <primary-storage> -o table
       </div>
     </div>
 
-#### Service Bus — Geo-DR Alias ([Lab 6](lab-06-service-bus-geo-dr.md))
+#### Service Bus — Geo-DR Alias ([Lab 9](lab-06-service-bus-geo-dr.md))
 
 <div class="lab-tabs">
       <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
@@ -1034,7 +1040,7 @@ az servicebus georecovery-alias show -g rg-messaging-swedencentral --namespace-n
       </div>
     </div>
 
-#### Key Vault — Secret Sync ([Lab 5](lab-05-key-vault-multi-region.md))
+#### Key Vault — Secret Sync ([Lab 8](lab-05-key-vault-multi-region.md))
 
 <div class="lab-tabs">
       <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
@@ -1068,7 +1074,7 @@ az keyvault secret list --vault-name <secondary-keyvault> --query "[].name" -o t
       </div>
     </div>
 
-#### Event Hubs — Geo-Replication ([Lab 7](lab-07-event-hubs-geo-replication.md))
+#### Event Hubs — Geo-Replication ([Lab 10](lab-07-event-hubs-geo-replication.md))
 
 <div class="lab-tabs">
       <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
@@ -1102,7 +1108,7 @@ az eventhubs georecovery-alias show -g rg-messaging-swedencentral --namespace-na
       </div>
     </div>
 
-#### Container Registry — Geo-Replica ([Lab 8](lab-08-acr-geo-replication.md))
+#### Container Registry — Geo-Replica ([Lab 11](lab-08-acr-geo-replication.md))
 
 <div class="lab-tabs">
       <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
@@ -1136,7 +1142,7 @@ az acr replication list -r <acr-name> -o table
       </div>
     </div>
 
-#### Front Door / Traffic Manager — Global Endpoint ([Lab 1](lab-01-webapp-traffic-manager.md))
+#### Front Door / Traffic Manager — Global Endpoint ([Lab 7](lab-01-webapp-traffic-manager.md))
 
 <div class="lab-tabs">
       <div class="lab-tabs__list" role="tablist" aria-label="Choose instruction path">
@@ -1790,24 +1796,26 @@ The prototype repository contains detailed documentation for day-2 operations:
 
 ## Lab Series Summary
 
-🎉 **Congratulations!** You have completed all 12 labs in the Azure Multi-Region Resiliency Hands-on Labs series.
+🎉 **Congratulations!** You have completed all 14 labs in the Azure Multi-Region Resiliency Hands-on Labs series.
 
 Here is what you accomplished across the entire series:
 
 | Lab | What You Built | Key Skills |
 |-----|----------------|------------|
-| [Lab 1](lab-01-webapp-traffic-manager.md) | Multi-region web app with Traffic Manager | Priority-based routing, health probes, Chaos Studio |
-| [Lab 2](lab-02-blob-storage-replication.md) | Cross-region blob storage replication | Object replication, change feed, versioning |
-| [Lab 3](lab-03-sql-geo-replication.md) | Azure SQL geo-replication with failover groups | Active geo-replication, automatic failover |
-| [Lab 4](lab-04-cosmos-global-distribution.md) | Globally distributed Cosmos DB | Multi-region writes, consistency levels |
-| [Lab 5](lab-11-mysql-geo-replication.md) | MySQL cross-region read replica | Read replicas, promotion, application endpoint cutover |
-| [Lab 6](lab-12-postgresql-geo-replication.md) | PostgreSQL cross-region read replica | WAL replication, virtual endpoints, promotion |
-| [Lab 7](lab-05-key-vault-multi-region.md) | Multi-region Key Vault sync | Backup/restore, cross-region secret management |
-| [Lab 8](lab-06-service-bus-geo-dr.md) | Service Bus geo-disaster recovery | Geo-DR alias, metadata replication |
-| [Lab 9](lab-07-event-hubs-geo-replication.md) | Event Hubs geo-replication | Geo-replication, consumer group failover |
-| [Lab 10](lab-08-acr-geo-replication.md) | Geo-replicated container registry | Premium ACR, region-local image pulls |
-| [Lab 11](lab-09-data-factory-dr.md) | Active/passive Data Factory pipelines | Pipeline duplication, linked service DR |
-| **Lab 12** (this lab) | **Integrated enterprise prototype** | **Coordinated multi-layer failover, topology-driven deployment** |
+| [Lab 1](lab-02-blob-storage-replication.md) | Cross-region blob storage replication | Object replication, change feed, versioning |
+| [Lab 2](lab-03-sql-geo-replication.md) | Azure SQL geo-replication with failover groups | Active geo-replication, automatic failover |
+| [Lab 3](lab-04-cosmos-global-distribution.md) | Globally distributed Cosmos DB | Multi-region writes, consistency levels |
+| [Lab 4](lab-11-mysql-geo-replication.md) | MySQL cross-region read replica | Read replicas, promotion, application endpoint cutover |
+| [Lab 5](lab-12-postgresql-geo-replication.md) | PostgreSQL cross-region read replica | WAL replication, virtual endpoints, promotion |
+| [Lab 6](lab-13-vm-site-recovery.md) | Azure VM disaster-recovery drill | Site Recovery, protection mappings, failover commit |
+| [Lab 7](lab-01-webapp-traffic-manager.md) | Multi-region web app with Traffic Manager | Priority-based routing, health probes, Chaos Studio |
+| [Lab 8](lab-05-key-vault-multi-region.md) | Multi-region Key Vault sync | Backup/restore, cross-region secret management |
+| [Lab 9](lab-06-service-bus-geo-dr.md) | Service Bus geo-disaster recovery | Geo-DR alias, metadata replication |
+| [Lab 10](lab-07-event-hubs-geo-replication.md) | Event Hubs geo-replication | Geo-replication, consumer group failover |
+| [Lab 11](lab-08-acr-geo-replication.md) | Geo-replicated container registry | Premium ACR, region-local image pulls |
+| [Lab 12](lab-14-aks-multi-cluster.md) | Multi-cluster AKS global routing | Fleet membership, geo-replicated images, Front Door |
+| [Lab 13](lab-09-data-factory-dr.md) | Active/passive Data Factory pipelines | Pipeline duplication, linked service DR |
+| **Lab 14** (this lab) | **Integrated enterprise prototype** | **Coordinated multi-layer failover, topology-driven deployment** |
 
 ### Key Takeaways
 

@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 2: Azure Blob Storage – Object Replication across Regions"
+title: "Lab 1: Azure Blob Storage – Object Replication across Regions"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 2: Azure Blob Storage – Object Replication across Regions
+# Lab 1: Azure Blob Storage – Object Replication across Regions
 
 > **Replicate block blobs between two non-paired Azure regions using Object Replication, so your data is available close to users — and safe from a regional outage — without being forced into Azure's default paired region.**
 
@@ -1805,6 +1805,6 @@ If replication does not behave as expected, check these first:
 
 | Previous | Home | Next |
 |---|---|---|
-| [Lab 1: Multi-Region Web App](lab-01-webapp-traffic-manager.md) | [All Labs](../index.md) | [Lab 3: Azure SQL Geo-Replication](lab-03-sql-geo-replication.md) |
+| — | [All Labs](../index.md) | [Lab 2: Azure SQL Geo-Replication](lab-03-sql-geo-replication.md) |
 
-[Next: Lab 3 — Azure SQL Database Geo-Replication →](lab-03-sql-geo-replication.md)
+[Next: Lab 2 — Azure SQL Database Geo-Replication →](lab-03-sql-geo-replication.md)

@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Lab 4: Azure Cosmos DB – Global Distribution"
+title: "Lab 3: Azure Cosmos DB – Global Distribution"
 ---
 
 [← Back to Index](../index.md)
 
-# Lab 4: Azure Cosmos DB – Global Distribution
+# Lab 3: Azure Cosmos DB – Global Distribution
 
 <script>
 document.documentElement.classList.add("lab-tabs-js");
@@ -1789,4 +1789,4 @@ In this lab you:
 
 ---
 
-[← Back to Index](../index.md) | [Next: Lab 5 — Azure Database for MySQL Read Replica →](lab-11-mysql-geo-replication.md)
+[← Back to Index](../index.md) | [Next: Lab 4 — Azure Database for MySQL Read Replica →](lab-11-mysql-geo-replication.md)
